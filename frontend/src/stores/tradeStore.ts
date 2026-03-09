@@ -21,6 +21,6 @@ export const useTradeStore = create<TradeState>()(
         return get().trades.filter((t) => t.marketId === marketId);
       },
     }),
-    { name: 'veil-trades' }
+    { name: 'obscura-trades' }
   )
 );
