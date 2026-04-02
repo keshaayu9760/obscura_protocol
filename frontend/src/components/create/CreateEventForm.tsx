@@ -120,13 +120,13 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
     }
     const txId = await execute(tx);
     if (txId) {
-      const isLightning = /lightning|round/i.test(question);
+      const isEclipse = /eclipse|round/i.test(question);
       registerMarketFromTx({
         txId,
         questionText: question,
         questionHash,
         outcomeLabels: outcomes,
-        isLightning,
+        isEclipse,
         tokenType,
         imageUrl: imageUrl || undefined,
         onRegistered: fetchMarkets,
@@ -329,3 +329,4 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
     </div>
   );
 }
+

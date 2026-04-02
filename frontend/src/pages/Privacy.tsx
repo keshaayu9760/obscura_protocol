@@ -4,13 +4,13 @@ import Card from '@/components/shared/Card';
 export default function Privacy() {
   return (
     <div>
-      <PageHeader title="Privacy Policy" subtitle="How the Protocol handles your data" />
+      <PageHeader title="Data Posture" subtitle="How the interface handles data, caching, and private transaction flow." />
       <Card className="p-8 max-w-4xl prose prose-invert prose-sm">
         <div className="space-y-6 text-sm text-gray-400 leading-relaxed">
           <section>
             <h2 className="text-lg font-heading font-semibold text-white mb-3">Privacy First Architecture</h2>
             <p>
-              Veil Strike is built on Aleo, a blockchain designed for privacy. The Protocol leverages
+              Obscura Protocol is built on Aleo, a blockchain designed for privacy. The Protocol leverages
               zero-knowledge proofs to enable private transactions. Your trading activity, positions, and
               balances are protected by cryptographic privacy by default.
             </p>
@@ -43,7 +43,7 @@ export default function Privacy() {
           <section>
             <h2 className="text-lg font-heading font-semibold text-white mb-3">Zero-Knowledge Proofs</h2>
             <p>
-              All transactions on Veil Strike generate zero-knowledge proofs locally in your browser.
+              All transactions on Obscura Protocol generate zero-knowledge proofs locally in your browser.
               These proofs verify the validity of your transaction without revealing the underlying data.
               Proof generation happens entirely client-side — no sensitive data leaves your device.
             </p>

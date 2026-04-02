@@ -1,4 +1,4 @@
-// Market Pool Manager — maintains a pool of on-chain lightning markets
+// Market Pool Manager — maintains a pool of on-chain ECLIPSE markets
 // Each 5-min round needs its own dedicated market so flash_settle can fairly resolve it.
 // Without per-round markets, a persistent market shared across rounds can't pick
 // a single winning outcome that's fair for all rounds.
@@ -36,13 +36,13 @@ const ASSET_TERMS: Record<string, string[]> = {
 
 /**
  * Initialize the pool from cached market data.
- * Finds existing lightning markets and adds them as 'available'.
+ * Finds existing ECLIPSE markets and adds them as 'available'.
  */
 export function initMarketPool(): void {
   const markets = getCachedMarkets();
 
   for (const m of markets) {
-    if (!m.isLightning || m.outcomes.length !== 2) continue;
+    if (!m.isEclipse || m.outcomes.length !== 2) continue;
     if (knownMarketIds.has(m.id)) continue;
     // Status must be active (not already resolved/cancelled)
     if (m.status !== 'active') continue;
@@ -177,3 +177,4 @@ export function cleanupPool(): void {
     }
   }
 }
+

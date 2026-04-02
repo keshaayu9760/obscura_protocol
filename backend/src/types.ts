@@ -17,7 +17,7 @@ export interface MarketInfo {
   status: 'active' | 'closed' | 'resolved' | 'cancelled' | 'pending_resolution';
   endTime: number;
   createdAt: number;
-  isLightning: boolean;
+  isEclipse: boolean;
   resolvedOutcome?: number;
   tokenType?: string;
   imageUrl?: string;
@@ -42,3 +42,4 @@ export interface LeaderboardEntry {
   streak: number;
   totalVolume: number;
 }
+

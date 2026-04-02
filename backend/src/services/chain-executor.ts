@@ -199,7 +199,7 @@ export async function executeFinalizeResolution(marketId: string, tokenType?: st
 }
 
 /**
- * Execute settle_round on-chain — instant resolution for lightning rounds
+ * Execute settle_round on-chain — instant resolution for ECLIPSE rounds
  * Only the resolver can call. Skips the challenge window entirely.
  */
 export async function executeSettleRound(
@@ -228,7 +228,7 @@ export async function executeSettleRound(
 }
 
 /**
- * Execute init_market on-chain — creates a new market (used by lightning-manager)
+ * Execute init_market on-chain — creates a new market (used by eclipse-manager)
  */
 export async function executeInitMarket(
   questionHash: string,
@@ -243,7 +243,7 @@ export async function executeInitMarket(
 ): Promise<string | null> {
   try {
     const pm = await getProgramManager();
-    console.log(`[ChainExecutor] Creating lightning market hash=${questionHash.slice(0, 20)}...`);
+    console.log(`[ChainExecutor] Creating ECLIPSE market hash=${questionHash.slice(0, 20)}...`);
 
     const txId = await pm.execute({
       programName: getProgramId(tokenType),
@@ -318,3 +318,4 @@ export async function fetchCurrentBlock(): Promise<number> {
     return 0;
   }
 }
+

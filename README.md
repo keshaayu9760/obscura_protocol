@@ -1,6 +1,6 @@
 <div align="center">
 
-# ⚔️ VEIL STRIKE
+# ⚔️ OBSCURA PROTOCOL
 
 ### Privacy-First Prediction Markets on Aleo
 
@@ -11,15 +11,15 @@
 
 **Trade outcomes. Stay private. Win on-chain.**
 
-[🌐 Live App](https://veil-strike.netlify.app) · [🔍 Explorer](https://testnet.aleoscan.io/program?id=veil_strike_v6.aleo) · [⚡ API](https://veil-strike-api.onrender.com/api/health)
+Live App: update after deploy · Explorer: https://testnet.aleoscan.io · API: update after deploy
 
 </div>
 
 ---
 
-## What is Veil Strike?
+## What is Obscura Protocol?
 
-Veil Strike is a **zero-knowledge prediction market protocol** built on **Aleo**. Users bet on real-world outcomes — crypto prices, sports, politics, science — with **full privacy** powered by ZK proofs. The protocol uses a **Fixed Product Market Maker (FPMM)**, supports three tokens (ALEO, USDCx, USAD), features **Strike Rounds** with 15-minute auto-resolved cycles (3 concurrent slots: BTC-ALEO, ETH-ALEO, ALEO-ALEO) using delegated proving, and includes a 12-hour dispute window for event markets.
+Obscura Protocol is a **zero-knowledge prediction market protocol** built on **Aleo**. Users bet on real-world outcomes — crypto prices, sports, politics, science — with **full privacy** powered by ZK proofs. The protocol uses a **Fixed Product Market Maker (FPMM)**, supports three tokens (ALEO, USDCx, USAD), features **Eclipse Rounds** with 15-minute auto-resolved cycles (3 concurrent slots: BTC-ALEO, ETH-ALEO, ALEO-ALEO) using delegated proving, and includes a 12-hour dispute window for event markets.
 
 Every trade generates a zero-knowledge proof. Your identity, position size, and payout are encrypted on-chain — only you can decrypt them.
 
@@ -29,22 +29,22 @@ Every trade generates a zero-knowledge proof. Your identity, position size, and 
 
 ```
 ┌─────────────────────────────────────────────────────────────── ┐
-│                     Veil Strike v6 Protocol                     │
+│                     Obscura Protocol v7 Protocol                     │
 │                                                                  │
 │  ┌──────────────────┐  ┌─────────────────┐  ┌────────────────┐ │
-│  │ veil_strike_v6   │  │veil_strike_v6_cx│  │veil_strike_v6_sd││
+│  │ obscura_protocol_v7   │  │obscura_protocol_v7_cx│  │obscura_protocol_v7_sd││
 │  │  ALEO + Govern.  │  │     USDCx       │  │      USAD      │ │
-│  │  17 transitions  │  │  15 transitions │  │ 15 transitions │ │
-│  │   919,704 vars   │  │ 1,095,849 vars  │  │ 1,095,373 vars │ │
+│  │  20 transitions  │  │  17 transitions │  │ 17 transitions │ │
+│  │ pause + dossier  │  │ pause + dossier │  │ pause + dossier│ │
 │  └──────────────────┘  └─────────────────┘  └────────────────┘ │
-│              Total: 47 transitions · 3,110,926 variables        │
+│                    Total: 54 transitions across 3 programs      │
 └─────────────────────────────────────────────────────────────────┘
           ▼                        ▼
 ┌──────────────────┐     ┌──────────────────────────────────────┐
 │  React + Vite    │────▶│         Express Backend               │
 │  TypeScript      │     │  Oracle · Indexer · Auto-Resolver    │
 │  Tailwind CSS    │     │  7-source price feeds (fallback chain)│
-│  Zustand stores  │     │  Scanner · Lightning Manager          │
+│  Zustand stores  │     │  Scanner · ECLIPSE Manager          │
 │  14 pages        │     │  Persistent prove-worker thread       │
 │  Shield Wallet   │     └──────────────────────────────────────┘
 └──────────────────┘
@@ -54,19 +54,19 @@ Every trade generates a zero-knowledge proof. Your identity, position size, and 
 
 ## Smart Contracts
 
-Three independent Leo programs deployed on Aleo Testnet — split to stay under the 2.1M variable limit.
+Three independent Leo programs prepared for Aleo Testnet deployment — split to stay under the variable limit.
 
 ### Program IDs
 
 | Program | Token | Transitions | Deploy TX |
 |---------|-------|-------------|-----------|
-| `veil_strike_v6.aleo` | ALEO + Governance | 17 | `at1459u3ehmatrnk8huk5wj4dtfw668fml6kga62rkw0m4wpnfrxvqs79ey84` |
-| `veil_strike_v6_cx.aleo` | USDCx | 15 | `at1g4py5xd8htpnalkm07axnahp5gyxj57jgm5cj9dqfxeeqckdzs8qpguzw9` |
-| `veil_strike_v6_sd.aleo` | USAD | 15 | `at1yupukl8wynnu748u95scnqztqk33nwema3lxy7dfw7jm694cucyshswksx` |
+| `obscura_protocol_v7.aleo` | ALEO + Governance | 20 | `TBD after deploy` |
+| `obscura_protocol_v7_cx.aleo` | USDCx | 17 | `TBD after deploy` |
+| `obscura_protocol_v7_sd.aleo` | USAD | 17 | `TBD after deploy` |
 
 ### Transitions Overview
 
-#### veil_strike_v6.aleo — ALEO Market + Governance (17)
+#### obscura_protocol_v7.aleo — ALEO Market + Governance (20)
 
 | # | Transition | Description |
 |---|-----------|-------------|
@@ -78,7 +78,7 @@ Three independent Leo programs deployed on Aleo Testnet — split to stay under 
 | 6 | `render_verdict` | Submit initial resolution with winning outcome |
 | 7 | `ratify_verdict` | Finalize after 12-hour challenge window |
 | 8 | `void_market` | Cancel market (creator or emergency) |
-| 9 | `flash_settle` | **Strike Rounds** — instant resolver-only settlement (no challenge) |
+| 9 | `flash_settle` | **Eclipse Rounds** — instant resolver-only settlement (no challenge) |
 | 10 | `contest_verdict` | Dispute resolution with 5 ALEO bond |
 | 11 | `recover_bond` | Reclaim dispute bond after finalization |
 | 12 | `harvest_winnings` | Redeem winning shares for ALEO |
@@ -87,9 +87,12 @@ Three independent Leo programs deployed on Aleo Testnet — split to stay under 
 | 15 | `harvest_fees` | Withdraw accumulated creator fees |
 | 16 | `submit_proposal` | Create on-chain governance proposal |
 | 17 | `cast_vote` | Vote on governance proposal |
+| 18 | `authorize_resolver` | Add or remove an approved resolver |
+| 19 | `set_protocol_pause` | Pause or resume market creation and trading |
+| 20 | `pin_market_dossier` | Attach an off-chain dossier hash to a market |
 
-#### veil_strike_v6_cx.aleo (USDCx) · veil_strike_v6_sd.aleo (USAD) — 15 each
-Same market flow as the main program but handling USDCx and USAD respectively. Missing: `flash_settle`, `submit_proposal`, `cast_vote` (governance lives in main program only).
+#### obscura_protocol_v7_cx.aleo (USDCx) · obscura_protocol_v7_sd.aleo (USAD) — 17 each
+Same market flow as the main program but handling USDCx and USAD respectively. Added v7 controls: `set_protocol_pause` and `pin_market_dossier`. Governance still lives in the main program only.
 
 ### Key Constants
 
@@ -151,10 +154,10 @@ Same market flow as the main program but handling USDCx and USAD respectively. M
     → Receives private ALEO credits (pro-rata + LP fees)
 ```
 
-### Strike Round Flow (automated via Round Bot)
+### Eclipse Round Flow (automated via Round Bot)
 
 ```
-1. Round Bot: open_market(question="BTC Strike Round #N", num_outcomes=2, resolver=bot)
+1. Round Bot: open_market(question="BTC Eclipse Round #N", num_outcomes=2, resolver=bot)
    → Delegated proving (~30s via Provable API). Oracle records start price.
    → 3 concurrent slots: BTC/ALEO, ETH/ALEO, ALEO/ALEO
 
@@ -207,8 +210,8 @@ Manual override: Admin can still resolve any market via /admin page + wallet fla
 
 The resolver address (`aleo19za49scmhufst9q8lhwka5hmkvzx5ersrue3gjwcs705542daursptmx0r`) is the only address authorized to call `flash_settle` and `render_verdict`.
 
-### Automated Round Bot — Strike Rounds
-The `services/round-bot.ts` automates the full Strike Round lifecycle using **delegated proving** (Provable API):
+### Automated Round Bot — Eclipse Rounds
+The `services/round-bot.ts` automates the full Eclipse Round lifecycle using **delegated proving** (Provable API):
 1. Creates 3 concurrent markets on startup (BTC-ALEO, ETH-ALEO, ALEO-ALEO)
 2. Every 15 minutes, the round timer expires
 3. Bot compares oracle start vs end price → `flash_settle` via delegated proving (~30s)
@@ -238,9 +241,9 @@ Both the round bot and the proof dispatcher use the **Provable API** for delegat
 | `/` | Landing | Hero, features, architecture, how-it-works, comparison |
 | `/markets` | Markets | Browse all prediction markets with filters |
 | `/markets/:id` | Market Detail | Chart, trade panel, buy/sell/LP |
-| `/rounds` | Strike Rounds | 15-min auto-resolved price rounds with live oracle feed |
+| `/rounds` | Eclipse Rounds | 15-min auto-resolved price rounds with live oracle feed |
 | `/portfolio` | Portfolio | Your encrypted positions, history, PnL |
-| `/create` | Create | Create event market (Strike Rounds are auto-created) |
+| `/create` | Create | Create event market (Eclipse Rounds are auto-created) |
 | `/governance` | Governance | On-chain proposals and voting |
 | `/leaderboard` | Leaderboard | Top traders |
 | `/pools` | Pools | LP overview |
@@ -261,7 +264,7 @@ Both the round bot and the proof dispatcher use the **Provable API** for delegat
 | Scanner | `services/scanner.ts` | Scans chain for new market_ids every minute |
 | Resolver | `services/resolver.ts` | Re-fetches market cache after on-chain resolution |
 | Auto-Resolver | `services/auto-resolver.ts` | Cron: auto-closes + resolves + finalizes event markets |
-| Lightning Mgr | `services/lightning-manager.ts` | Tracks active Strike Rounds, admin resolve/replacement |
+| ECLIPSE Mgr | `services/eclipse-manager.ts` | Tracks active Eclipse Rounds, admin resolve/replacement |
 | Round Bot | `services/round-bot.ts` | Automated 15-min round lifecycle (create → settle → repeat) |
 | Delegated Prover | `services/delegated-prover.ts` | Provable API delegated proving (~30s per tx) |
 | Proof Dispatcher | `services/proof-dispatcher.ts` | Routes to delegated prover (fast) or local worker (fallback) |
@@ -277,14 +280,14 @@ Both the round bot and the proof dispatcher use the **Provable API** for delegat
 | POST | `/api/markets/register` | Register market metadata |
 | GET | `/api/oracle` | Live prices (BTC, ETH, ALEO) |
 | POST | `/api/oracle/refresh` | Force price refresh |
-| GET | `/api/lightning/active` | Active strike rounds |
-| GET | `/api/lightning/bot/status` | Round bot status + slot details |
-| GET | `/api/lightning/bot/rounds` | Active bot rounds (for frontend) |
-| POST | `/api/lightning/bot/start` | Start the round bot |
-| POST | `/api/lightning/bot/stop` | Stop the round bot |
-| POST | `/api/lightning/bot/force-settle` | Force-settle a specific slot |
-| POST | `/api/lightning/admin/resolve` | Manual settle a market (flash_settle) |
-| POST | `/api/lightning/admin/create-replacement` | Replace resolved round |
+| GET | `/api/eclipse/active` | Active strike rounds |
+| GET | `/api/eclipse/bot/status` | Round bot status + slot details |
+| GET | `/api/eclipse/bot/rounds` | Active bot rounds (for frontend) |
+| POST | `/api/eclipse/bot/start` | Start the round bot |
+| POST | `/api/eclipse/bot/stop` | Stop the round bot |
+| POST | `/api/eclipse/bot/force-settle` | Force-settle a specific slot |
+| POST | `/api/eclipse/admin/resolve` | Manual settle a market (flash_settle) |
+| POST | `/api/eclipse/admin/create-replacement` | Replace resolved round |
 | GET | `/api/governance` | All governance proposals |
 | GET | `/api/stats` | Protocol stats |
 
@@ -333,11 +336,11 @@ RESOLVER_PRIVATE_KEY=APrivateKey1...
 
 ```
 contract/
-├── veil_strike_v6/        ← ALEO + Governance (17 transitions)
+├── obscura_protocol_v7/        ← ALEO + Governance (20 transitions)
 │   └── src/main.leo
-├── veil_strike_v6_cx/     ← USDCx (15 transitions)
+├── obscura_protocol_v7_cx/     ← USDCx (17 transitions)
 │   └── src/main.leo
-└── veil_strike_v6_sd/     ← USAD (15 transitions)
+└── obscura_protocol_v7_sd/     ← USAD (17 transitions)
     └── src/main.leo
 ```
 
@@ -346,13 +349,13 @@ contract/
 ## Status & Roadmap
 
 **Deployed & Working:**
-- ✅ 3 Leo programs deployed on Aleo Testnet (47 transitions)
+- ✅ 3 Leo programs prepared for Obscura v7 deployment (54 transitions)
 - ✅ Event prediction markets (2–4 outcomes, any category)
-- ✅ Strike Rounds — 15-minute auto-resolved cycles via delegated proving (3 slots: BTC, ETH, ALEO)
+- ✅ Eclipse Rounds — 15-minute auto-resolved cycles via delegated proving (3 slots: BTC, ETH, ALEO)
 - ✅ FPMM AMM with complete-set minting
 - ✅ Dispute system (contest_verdict + recover_bond)
 - ✅ On-chain governance (submit_proposal + cast_vote)
-- ✅ Full backend with oracle, indexer, scanner, auto-resolver, lightning manager
+- ✅ Full backend with oracle, indexer, scanner, auto-resolver, ECLIPSE manager
 - ✅ React frontend (14 pages, all working)
 - ✅ Portfolio with encrypted position tracking + proper win/loss/claimable states
 - ✅ Bet cooldown (40s) — prevents UTXO reuse errors across markets
@@ -373,3 +376,4 @@ contract/
   Built for <strong>Aleo Developer Program — Wave 4</strong><br/>
   <sub>All tokens are testnet tokens with no real-world value.</sub>
 </div>
+

@@ -1,7 +1,7 @@
 // ============================================================================
-// VEIL STRIKE v6 — Private Prediction Market [ALEO + Governance]
+// OBSCURA PROTOCOL v7 — Private Prediction Market [ALEO + Governance]
 // ============================================================================
-// ALEO-native markets, FPMM AMM, governance, dispute system, lightning rounds.
+// ALEO-native markets, FPMM AMM, governance, dispute system, and Eclipse rounds.
 // Stablecoin markets handled by companion programs (cx, sd).
 //
 // PRIVACY MODEL:
@@ -9,12 +9,12 @@
 //   - Sell/Redeem/Refund: transfer_public_to_private hides recipient
 //   - All position records are private (no mapping by address)
 //
-// 17 transitions
+// 20 transitions
 // ============================================================================
 
 import credits.aleo;
 
-program veil_strike_v6.aleo {
+program obscura_protocol_v7.aleo {
 
     // ========================================================================
     // CONSTANTS
@@ -42,6 +42,7 @@ program veil_strike_v6.aleo {
     const MIN_LIQUIDITY: u128 = 1_000_000u128;
     const MIN_DISPUTE_BOND: u128 = 5_000_000u128;
     const GOVERNANCE_QUORUM: u128 = 1u128;
+    const PAUSE_KEY: u8 = 0u8;
 
     // ========================================================================
     // RECORDS
@@ -194,6 +195,8 @@ program veil_strike_v6.aleo {
     mapping proposals: field => Proposal;
     mapping vote_cast: field => bool;
     mapping approved_resolvers: address => bool;
+    mapping protocol_paused: u8 => bool;
+    mapping market_dossiers: field => field;
 
     @noupgrade
     async constructor() {}
@@ -214,6 +217,8 @@ program veil_strike_v6.aleo {
     ) -> (field, LPToken, Future) {
         assert(num_outcomes >= 2u8 && num_outcomes <= 4u8);
         assert(initial_liquidity >= MIN_LIQUIDITY);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let market_id: field = BHP256::hash_to_field(
             MarketSeed { creator: self.signer, question_hash: question_hash, nonce: nonce }
@@ -282,6 +287,8 @@ program veil_strike_v6.aleo {
     ) -> (OutcomeShare, credits.aleo/credits, Future) {
         assert(outcome >= 1u8 && outcome <= 4u8);
         assert(amount_in >= MIN_TRADE_AMOUNT);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let share: OutcomeShare = OutcomeShare {
             owner: self.signer, market_id: market_id, outcome: outcome,
@@ -370,6 +377,8 @@ program veil_strike_v6.aleo {
         assert(tokens_desired >= MIN_TRADE_AMOUNT);
         assert(max_shares_used > 0u128);
         assert(max_shares_used <= shares.quantity);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let protocol_fee: u128 = (tokens_desired * PROTOCOL_FEE_BPS) / FEE_DENOMINATOR;
         let creator_fee: u128 = (tokens_desired * CREATOR_FEE_BPS) / FEE_DENOMINATOR;
@@ -489,6 +498,8 @@ program veil_strike_v6.aleo {
         private credits_in: credits.aleo/credits,
     ) -> (LPToken, credits.aleo/credits, Future) {
         assert(amount >= MIN_LIQUIDITY);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
         let lp_token: LPToken = LPToken {
             owner: self.signer, market_id: market_id, lp_shares: expected_lp_shares,
             lp_nonce: lp_nonce, token_type: TOKEN_ALEO,
@@ -647,7 +658,7 @@ program veil_strike_v6.aleo {
     }
 
     // ========================================================================
-    // 9. LIGHTNING SETTLE
+    // 9. ECLIPSE SETTLE
     // ========================================================================
 
     async transition flash_settle(public market_id: field, public winning_outcome: u8) -> Future {
@@ -989,4 +1000,45 @@ program veil_strike_v6.aleo {
             created_at: proposal.created_at, deadline: proposal.deadline, executed: false,
         });
     }
+
+    // ========================================================================
+    // 18. AUTHORIZE RESOLVER
+    // ========================================================================
+
+    async transition authorize_resolver(public resolver: address, public enabled: bool) -> Future {
+        return authorize_resolver_finalize(self.signer, resolver, enabled);
+    }
+
+    async function authorize_resolver_finalize(caller: address, resolver: address, enabled: bool) {
+        assert(caller == DEPLOYER);
+        approved_resolvers.set(resolver, enabled);
+    }
+
+    // ========================================================================
+    // 19. SET PROTOCOL PAUSE
+    // ========================================================================
+
+    async transition set_protocol_pause(public paused: bool) -> Future {
+        return set_protocol_pause_finalize(self.signer, paused);
+    }
+
+    async function set_protocol_pause_finalize(caller: address, paused: bool) {
+        assert(caller == DEPLOYER);
+        protocol_paused.set(PAUSE_KEY, paused);
+    }
+
+    // ========================================================================
+    // 20. PIN MARKET DOSSIER
+    // ========================================================================
+
+    async transition pin_market_dossier(public market_id: field, public dossier_hash: field) -> Future {
+        return pin_market_dossier_finalize(market_id, dossier_hash, self.signer);
+    }
+
+    async function pin_market_dossier_finalize(market_id: field, dossier_hash: field, caller: address) {
+        let market: Market = markets.get(market_id);
+        assert(caller == market.creator || caller == market.resolver || caller == DEPLOYER);
+        market_dossiers.set(market_id, dossier_hash);
+    }
 }
+

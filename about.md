@@ -1,7 +1,7 @@
-# ⚔️ VEIL STRIKE — Privacy-First Prediction Markets on Aleo
+# ⚔️ OBSCURA PROTOCOL — Privacy-First Prediction Markets on Aleo
 
 > **Wave 4 Submission · Aleo Developer Program**
-> 🌐 Live: https://veil-strike.netlify.app · ⚡ API: https://veil-strike-api.onrender.com/api/health
+> 🌐 Live: https://obscura-protocol.netlify.app · ⚡ API: https://obscura-protocol-api.onrender.com/api/health
 
 ---
 
@@ -11,14 +11,14 @@ Every major prediction market — Polymarket, Augur, Azuro — leaks everything 
 
 ---
 
-## 💡 The Solution — Veil Strike
+## 💡 The Solution — Obscura Protocol
 
-Veil Strike is a **zero-knowledge prediction market protocol** on **Aleo**. Every trade, every position, and every payout is protected by ZK proofs. No one — not even the protocol — can see what you bet, how much you hold, or what you won.
+Obscura Protocol is a **zero-knowledge prediction market protocol** on **Aleo**. Every trade, every position, and every payout is protected by ZK proofs. No one — not even the protocol — can see what you bet, how much you hold, or what you won.
 
 **What makes it different:**
 - 🔒 Positions stored as **encrypted on-chain records** — only the holder can decrypt
 - 📊 **FPMM AMM** — no order books, no front-running possible
-- ⚡ **Strike Rounds** — 15-minute auto-resolved price prediction rounds (UP/DOWN on BTC, ETH, ALEO)
+- ⚡ **Eclipse Rounds** — 15-minute auto-resolved price prediction rounds (UP/DOWN on BTC, ETH, ALEO)
 - 🏩 **On-chain Governance** — propose, vote, and execute protocol changes
 - 🎯 **Multi-outcome markets** — 2, 3, or 4 outcomes per market
 - 💰 **Triple token support** — ALEO, USDCx, USAD
@@ -32,9 +32,9 @@ Veil Strike is a **zero-knowledge prediction market protocol** on **Aleo**. Ever
 
 | Program | Token | TX |
 |---------|-------|----|
-| `veil_strike_v6.aleo` | ALEO + Governance (17 transitions) | `at1459u3ehmatrnk8huk5wj4dtfw668fml6kga62rkw0m4wpnfrxvqs79ey84` |
-| `veil_strike_v6_cx.aleo` | USDCx (15 transitions) | `at1g4py5xd8htpnalkm07axnahp5gyxj57jgm5cj9dqfxeeqckdzs8qpguzw9` |
-| `veil_strike_v6_sd.aleo` | USAD (15 transitions) | `at1yupukl8wynnu748u95scnqztqk33nwema3lxy7dfw7jm694cucyshswksx` |
+| `obscura_protocol_v7.aleo` | ALEO + Governance (17 transitions) | `at1459u3ehmatrnk8huk5wj4dtfw668fml6kga62rkw0m4wpnfrxvqs79ey84` |
+| `obscura_protocol_v7_cx.aleo` | USDCx (15 transitions) | `at1g4py5xd8htpnalkm07axnahp5gyxj57jgm5cj9dqfxeeqckdzs8qpguzw9` |
+| `obscura_protocol_v7_sd.aleo` | USAD (15 transitions) | `at1yupukl8wynnu748u95scnqztqk33nwema3lxy7dfw7jm694cucyshswksx` |
 
 **Total: 47 transitions · 3,110,926 variables · 2,856 statements**
 
@@ -68,8 +68,8 @@ Backend   →  Express + Node.js
                ├── 7-source oracle fallback (CoinGecko → OKX → Binance → CoinCap → ...)
                ├── Auto-indexer + chain scanner (new market detection every 60s)
                ├── Delegated prover (Provable API, ~30s per tx)
-               ├── Round Bot (automated 15-min Strike Rounds: 3 slots, all settled on-chain)
-               └── Lightning Manager (tracks rounds, admin manual override)
+               ├── Round Bot (automated 15-min Eclipse Rounds: 3 slots, all settled on-chain)
+               └── ECLIPSE Manager (tracks rounds, admin manual override)
 Contracts →  3 Leo programs on Aleo Testnet (47 transitions)
 ```
 
@@ -77,11 +77,11 @@ Contracts →  3 Leo programs on Aleo Testnet (47 transitions)
 
 ## 🖥️ All Working Pages (14 total)
 
-`/` Landing · `/markets` Browse · `/markets/:id` Trade · `/rounds` Strike Rounds · `/portfolio` Positions · `/create` Create Market · `/governance` Proposals+Voting · `/leaderboard` · `/pools` LP · `/stats` Analytics · `/admin` Resolver · `/docs` · `/faq` · `/privacy`
+`/` Landing · `/markets` Browse · `/markets/:id` Trade · `/rounds` Eclipse Rounds · `/portfolio` Positions · `/create` Create Market · `/governance` Proposals+Voting · `/leaderboard` · `/pools` LP · `/stats` Analytics · `/admin` Resolver · `/docs` · `/faq` · `/privacy`
 
 ---
 
-## ⚡ Strike Rounds — Full Flow (Automated)
+## ⚡ Eclipse Rounds — Full Flow (Automated)
 
 1. **Round Bot** creates 3 concurrent markets via delegated proving (~30s each): BTC/ALEO, ETH/ALEO, ALEO/ALEO.
 2. User bets UP or DOWN → private `OutcomeShare` record on-chain.
@@ -107,7 +107,7 @@ On-chain via `submit_proposal` + `cast_vote`. Supported: approve resolvers, trea
 - 🆕 3-program v6 architecture (v5 was single-program, hit variable limit at 2.1M)
 - 🆕 USAD stablecoin — 3rd token with own program
 - 🆕 On-chain governance (`submit_proposal` + `cast_vote` with `GovernanceReceipt`)
-- 🆕 Strike Rounds redesigned: 15-minute auto-resolved cycles with 3 concurrent slots (BTC, ETH, ALEO)
+- 🆕 Eclipse Rounds redesigned: 15-minute auto-resolved cycles with 3 concurrent slots (BTC, ETH, ALEO)
 - 🆕 All rounds settled on-chain via `flash_settle` (no virtual reset)
 - 🆕 Smart recovery: bot adopts existing active rounds on restart, prevents duplicates
 - 🆕 Bet cooldown (40s) — prevents UTXO reuse errors when betting across multiple markets
@@ -126,3 +126,4 @@ On-chain via `submit_proposal` + `cast_vote`. Supported: approve resolvers, trea
 ---
 
 *Aleo Developer Program — Wave 4 · All tokens are testnet tokens with no real-world value.*
+

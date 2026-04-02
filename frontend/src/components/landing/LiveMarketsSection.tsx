@@ -40,8 +40,8 @@ export default function LiveMarketsSection() {
               >
                 <Link to={`/markets/${market.id}`} className="block glass-card-hover p-6 h-full">
                   <div className="flex items-center gap-2 mb-3">
-                    <Badge variant={market.isLightning ? 'teal' : 'gray'}>
-                      {market.isLightning ? '⚡ Lightning' : market.category}
+                    <Badge variant={market.isEclipse ? 'teal' : 'gray'}>
+                      {market.isEclipse ? '⚡ Eclipse' : market.category}
                     </Badge>
                     <Badge variant="green" pulse>Active</Badge>
                   </div>
@@ -93,3 +93,4 @@ export default function LiveMarketsSection() {
     </section>
   );
 }
+

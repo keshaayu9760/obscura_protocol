@@ -187,7 +187,7 @@ export async function scanForNewMarkets(blocksToScan: number = 200): Promise<num
             questionHash: found.questionHash,
             question: pendingMeta?.question || `Market ${found.marketId.slice(0, 16)}...`,
             outcomes: pendingMeta?.outcomes || outcomes,
-            isLightning: pendingMeta?.isLightning || false,
+            isEclipse: pendingMeta?.isEclipse || false,
             tokenType: found.tokenType as 'ALEO' | 'USDCX' | 'USAD',
           });
 
@@ -225,7 +225,7 @@ export async function scanForNewMarkets(blocksToScan: number = 200): Promise<num
 interface PendingMeta {
   question: string;
   outcomes: string[];
-  isLightning: boolean;
+  isEclipse: boolean;
   createdAt: number;
 }
 
@@ -247,3 +247,4 @@ function getPendingMeta(questionHash: string): PendingMeta | undefined {
 export function deletePendingMeta(questionHash: string): void {
   delete pendingMetaByHash[questionHash];
 }
+

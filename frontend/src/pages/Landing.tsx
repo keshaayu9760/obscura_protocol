@@ -6,16 +6,16 @@ import LiveMarketsSection from '@/components/landing/LiveMarketsSection';
 import TechStackSection from '@/components/landing/TechStackSection';
 import ArchitectureSection from '@/components/landing/ArchitectureSection';
 import PrivacySection from '@/components/landing/PrivacySection';
-import LightningSection from '@/components/landing/LightningSection';
+import EclipseSection from '@/components/landing/EclipseSection';
 import CTASection from '@/components/landing/CTASection';
 
 export default function Landing() {
   return (
-    <div className="-mt-20">
+    <div>
       <HeroSection />
       <LiveMarketsSection />
       <FeaturesSection />
-      <LightningSection />
+      <EclipseSection />
       <HowItWorksSection />
       <PrivacySection />
       <ArchitectureSection />
@@ -25,3 +25,4 @@ export default function Landing() {
     </div>
   );
 }
+

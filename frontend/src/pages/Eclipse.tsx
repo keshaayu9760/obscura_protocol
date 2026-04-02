@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOracleStore } from '@/stores/oracleStore';
 import { useMarketStore } from '@/stores/marketStore';
-import { useLightningBetStore } from '@/stores/lightningBetStore';
-import { ActiveRounds, LightningHistory, OraclePriceFeed } from '@/components/lightning';
+import { useEclipseBetStore } from '@/stores/eclipseBetStore';
+import { ActiveRounds, EclipseHistory, OraclePriceFeed } from '@/components/eclipse';
 import PageHeader from '@/components/layout/PageHeader';
 import { API_BASE } from '@/constants';
 
-interface LightningRound {
+interface EclipseRound {
   id: string;
   asset: 'BTC' | 'ETH' | 'ALEO';
   tokenType?: string;
@@ -18,17 +18,17 @@ interface LightningRound {
   result: 'up' | 'down' | null;
 }
 
-export default function Lightning() {
+export default function Eclipse() {
   const { fetchPrices } = useOracleStore();
   const { fetchMarkets, markets } = useMarketStore();
-  const resolveBets = useLightningBetStore((s) => s.resolveBets);
-  const bets = useLightningBetStore((s) => s.bets);
-  const [allRounds, setAllRounds] = useState<LightningRound[]>([]);
+  const resolveBets = useEclipseBetStore((s) => s.resolveBets);
+  const bets = useEclipseBetStore((s) => s.bets);
+  const [allRounds, setAllRounds] = useState<EclipseRound[]>([]);
 
   // Fetch all rounds (including resolved) for bet resolution
   const fetchAllRounds = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/lightning`);
+      const res = await fetch(`${API_BASE}/eclipse`);
       if (res.ok) {
         const data = await res.json();
         setAllRounds(data.rounds || []);
@@ -78,15 +78,15 @@ export default function Lightning() {
   return (
     <div>
       <PageHeader
-        title="Lightning Markets"
+        title="Eclipse Markets"
         subtitle="Fast-resolving prediction markets powered by on-chain oracles"
-        action={{ label: '⚡ Create Lightning', href: '/create' }}
+        action={{ label: '⚡ Create Eclipse', href: '/create' }}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
         <div className="lg:col-span-3 space-y-6">
           <ActiveRounds markets={[]} />
-          <LightningHistory markets={[]} />
+          <EclipseHistory markets={[]} />
         </div>
         <div>
           <OraclePriceFeed />
@@ -95,3 +95,4 @@ export default function Lightning() {
     </div>
   );
 }
+

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useMarketStore } from '@/stores/marketStore';
 import { useTradeStore } from '@/stores/tradeStore';
-import { useLightningBetStore } from '@/stores/lightningBetStore';
+import { useEclipseBetStore } from '@/stores/eclipseBetStore';
 import { useTransaction } from '@/hooks/useTransaction';
 import type { ShareRecord } from '@/hooks/useTransaction';
 import { formatAleo, formatTimeAgo } from '@/utils/format';
@@ -21,10 +21,10 @@ import { API_BASE } from '@/constants';
 export default function Portfolio() {
   const { markets, fetchMarkets } = useMarketStore();
   const trades = useTradeStore((s) => s.trades);
-  const lightningBets = useLightningBetStore((s) => s.bets);
+  const eclipseBets = useEclipseBetStore((s) => s.bets);
   const { status: txStatus, execute, fetchShareRecords } = useTransaction();
   const [shareRecords, setShareRecords] = useState<ShareRecord[]>([]);
-  const [activeTab, setActiveTab] = useState<'shares' | 'trades' | 'lightning'>('shares');
+  const [activeTab, setActiveTab] = useState<'shares' | 'trades' | 'eclipse'>('shares');
 
   useEffect(() => {
     // Always refresh markets on mount to catch recent resolves (e.g. admin flash_settle)
@@ -70,26 +70,26 @@ export default function Portfolio() {
 
   // Computed stats
   const totalInvested = trades.reduce((s, t) => t.type === 'buy' ? s + t.amount : s, 0);
-  const wonBets = lightningBets.filter((b) => b.won);
-  const lostBets = lightningBets.filter((b) => b.won === false);
+  const wonBets = eclipseBets.filter((b) => b.won);
+  const lostBets = eclipseBets.filter((b) => b.won === false);
   const totalWon = wonBets.reduce((s, b) => s + (b.payout || 0), 0);
   const totalLost = lostBets.reduce((s, b) => s + b.amount, 0);
   const pnl = totalWon - totalLost;
-  const winRate = lightningBets.filter(b => b.result).length > 0
-    ? (wonBets.length / lightningBets.filter(b => b.result).length) * 100
+  const winRate = eclipseBets.filter(b => b.result).length > 0
+    ? (wonBets.length / eclipseBets.filter(b => b.result).length) * 100
     : 0;
 
   const tabs = [
     { id: 'shares', label: `On-Chain Shares (${shareRecords.length})` },
     { id: 'trades', label: `Trade History (${trades.length})` },
-    { id: 'lightning', label: `Lightning Bets (${lightningBets.length})` },
+    { id: 'eclipse', label: `Eclipse Bets (${eclipseBets.length})` },
   ] as const;
 
   return (
     <div>
       <PageHeader
-        title="Portfolio"
-        subtitle="Your positions, trades, and on-chain share records"
+        title="Vault Ledger"
+        subtitle="Inventory, fills, and claimable records currently tied to this wallet."
       />
 
       {/* Stats Cards */}
@@ -123,7 +123,7 @@ export default function Portfolio() {
               <div className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all duration-300 ${pnl >= 0 ? 'bg-accent-green/10 border-accent-green/15 group-hover/stat:shadow-[0_0_12px_-4px_rgba(34,197,94,0.2)]' : 'bg-accent-red/10 border-accent-red/15 group-hover/stat:shadow-[0_0_12px_-4px_rgba(239,68,68,0.2)]'}`}>
                 <ChartIcon className={`w-4 h-4 ${pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`} />
               </div>
-              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-heading">Lightning P&L</p>
+              <p className="text-[10px] text-gray-500 uppercase tracking-wider font-heading">Eclipse P&L</p>
             </div>
             <p className={`text-2xl font-mono font-bold tabular-nums ${pnl >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
               {pnl >= 0 ? '+' : ''}{formatAleo(pnl)}
@@ -170,7 +170,7 @@ export default function Portfolio() {
             <EmptyState
               icon={<ShieldIcon className="w-10 h-10 text-gray-600" />}
               title="No on-chain shares"
-              description="Buy shares on Markets or Lightning to see them here"
+              description="Buy shares on Markets or Rounds to see them here"
               actionLabel="Browse Markets"
               actionHref="/markets"
             />
@@ -191,11 +191,11 @@ export default function Portfolio() {
                 const tokenLabel = record.tokenType === 1 ? 'USDCx' : record.tokenType === 2 ? 'USAD' : 'ALEO';
                 const outcomeLabel = record.outcome === 1 ? 'UP / YES' : 'DOWN / NO';
 
-                // Detect lightning winning position — user won even if on-chain market not yet resolved
-                const isLightningWin = !marketResolved && market?.isLightning && lightningBets.some(
+                // Detect Eclipse winning position — user won even if on-chain market not yet resolved
+                const isEclipseWin = !marketResolved && market?.isEclipse && eclipseBets.some(
                   (b) => b.won && b.marketId === record.marketId && b.direction === (record.outcome === 1 ? 'up' : 'down')
                 );
-                const isLightningLoss = !marketResolved && market?.isLightning && lightningBets.some(
+                const isEclipseLoss = !marketResolved && market?.isEclipse && eclipseBets.some(
                   (b) => b.won === false && b.marketId === record.marketId && b.direction === (record.outcome === 1 ? 'up' : 'down')
                 );
                 const isClaimable = isWinner;
@@ -207,7 +207,7 @@ export default function Portfolio() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.04, duration: 0.4 }}
                   >
-                    <Card className={`p-4 group/share ${isLoser || isLightningLoss ? 'opacity-60' : ''}`}>
+                    <Card className={`p-4 group/share ${isLoser || isEclipseLoss ? 'opacity-60' : ''}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex-1 min-w-0 mr-3">
                           <div className="flex items-center gap-2 mb-1.5">
@@ -215,8 +215,8 @@ export default function Portfolio() {
                             <Badge variant="teal"><CryptoIcon symbol={tokenLabel} size={12} className="mr-1" />{tokenLabel}</Badge>
                             {isWinner && <Badge variant="success" size="sm">💰 Claimable</Badge>}
                             {isLoser && <Badge variant="danger" size="sm">✗ Lost</Badge>}
-                            {isLightningWin && <Badge variant="success" size="sm">⚡ Won</Badge>}
-                            {isLightningLoss && <Badge variant="danger" size="sm">⚡ Lost</Badge>}
+                            {isEclipseWin && <Badge variant="success" size="sm">⚡ Won</Badge>}
+                            {isEclipseLoss && <Badge variant="danger" size="sm">⚡ Lost</Badge>}
                           </div>
                           <p className="text-sm font-mono text-gray-300 truncate group-hover/share:text-white transition-colors duration-300">
                             {market?.question || `Market ${record.marketId.slice(0, 12)}...`}
@@ -238,7 +238,7 @@ export default function Portfolio() {
                             )}
                           </div>
                         </div>
-                        {!isLoser && !isLightningLoss && (
+                        {!isLoser && !isEclipseLoss && (
                           <Button
                             variant="primary"
                             size="sm"
@@ -310,20 +310,20 @@ export default function Portfolio() {
         </motion.div>
       )}
 
-      {/* Lightning Bets Tab */}
-      {activeTab === 'lightning' && (
+      {/* Eclipse Bets Tab */}
+      {activeTab === 'eclipse' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {lightningBets.length === 0 ? (
+          {eclipseBets.length === 0 ? (
             <EmptyState
               icon={<ChartIcon className="w-8 h-8 text-gray-600" />}
-              title="No lightning bets"
-              description="Place bets on Lightning rounds to see your history"
-              actionLabel="Go to Lightning"
-              actionHref="/lightning"
+              title="No eclipse bets"
+              description="Place bets on Eclipse rounds to see your history"
+              actionLabel="Go to Rounds"
+              actionHref="/rounds"
             />
           ) : (
             <div className="space-y-2">
-              {lightningBets.slice(0, 50).map((bet, i) => (
+              {eclipseBets.slice(0, 50).map((bet, i) => (
                 <motion.div
                   key={`${bet.roundId}-${i}`}
                   initial={{ opacity: 0, y: 10 }}
@@ -368,3 +368,4 @@ export default function Portfolio() {
     </div>
   );
 }
+

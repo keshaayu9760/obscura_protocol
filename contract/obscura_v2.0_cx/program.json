@@ -1,7 +1,7 @@
 {
-    "program": "veil_strike_v6_cx.aleo",
-    "version": "0.1.0",
-    "description": "Veil Strike v6 CX — USDCx stablecoin prediction market module",
+    "program": "obscura_v2.0_cx.aleo",
+    "version": "2.0.0",
+    "description": "Obscura Protocol v2.0 CX — USDCx stablecoin prediction market module with oracle integration",
     "license": "MIT",
     "dependencies": [
         {

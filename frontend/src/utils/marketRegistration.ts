@@ -69,7 +69,7 @@ export interface MarketRegistrationParams {
   questionText: string;
   questionHash: string;
   outcomeLabels: string[];
-  isLightning: boolean;
+  isEclipse: boolean;
   tokenType?: string;
   imageUrl?: string;
   onRegistered?: () => void;
@@ -82,14 +82,14 @@ export interface MarketRegistrationParams {
  * 3. Poll chain, extract market_id from future args, register with backend
  */
 export async function registerMarketFromTx(params: MarketRegistrationParams): Promise<void> {
-  const { txId, questionText, questionHash, outcomeLabels, isLightning, tokenType, imageUrl, onRegistered } = params;
+  const { txId, questionText, questionHash, outcomeLabels, isEclipse, tokenType, imageUrl, onRegistered } = params;
 
   // Phase 1: Save pending metadata
   try {
     await fetch(`${API_BASE}/markets/pending`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ questionHash, question: questionText, outcomes: outcomeLabels, isLightning }),
+      body: JSON.stringify({ questionHash, question: questionText, outcomes: outcomeLabels, isEclipse }),
     });
     console.log(`[MarketReg] Saved pending metadata for hash ${questionHash.slice(0, 20)}...`);
   } catch { /* non-critical */ }
@@ -153,7 +153,7 @@ export async function registerMarketFromTx(params: MarketRegistrationParams): Pr
           marketId,
           question: questionText,
           outcomes: outcomeLabels,
-          isLightning,
+          isEclipse,
           tokenType: tokenType || undefined,
           imageUrl: imageUrl || undefined,
         }),
@@ -167,3 +167,4 @@ export async function registerMarketFromTx(params: MarketRegistrationParams): Pr
   }
   console.warn('[MarketReg] Frontend auto-registration timed out — backend scanner will auto-discover the market.');
 }
+

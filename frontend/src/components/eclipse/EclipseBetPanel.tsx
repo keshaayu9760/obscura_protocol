@@ -8,13 +8,13 @@ import { PRECISION } from '@/constants';
 import { useMarketStore } from '@/stores/marketStore';
 import Button from '@/components/shared/Button';
 import Card from '@/components/shared/Card';
-import LightningTimer from './LightningTimer';
+import EclipseTimer from './EclipseTimer';
 
-interface LightningBetPanelProps {
+interface EclipseBetPanelProps {
   market: Market;
 }
 
-export default function LightningBetPanel({ market }: LightningBetPanelProps) {
+export default function EclipseBetPanel({ market }: EclipseBetPanelProps) {
   const [selectedOutcome, setSelectedOutcome] = useState(0);
   const [amount, setAmount] = useState('');
   const { status, execute, fetchCreditsRecord } = useTransaction();
@@ -49,7 +49,7 @@ export default function LightningBetPanel({ market }: LightningBetPanelProps) {
     <Card className="p-6 border-amber-400/10">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-sm font-heading font-semibold text-white">Quick Bet</h3>
-        <LightningTimer endTime={market.endTime} compact />
+        <EclipseTimer endTime={market.endTime} compact />
       </div>
 
       {/* Outcome buttons */}
@@ -133,3 +133,4 @@ export default function LightningBetPanel({ market }: LightningBetPanelProps) {
     </Card>
   );
 }
+

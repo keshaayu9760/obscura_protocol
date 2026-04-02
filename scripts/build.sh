@@ -1,18 +1,18 @@
 #!/bin/bash
-# Veil Strike - Build Everything
+# Obscura Protocol - Build Everything
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR/.."
 
 echo "============================================"
-echo "  Veil Strike - Full Build"
+echo "  Obscura Protocol - Full Build"
 echo "============================================"
 echo ""
 
 # Build Leo contract
 echo "[1/3] Building Leo contract..."
-cd "$ROOT_DIR/contract/veil_strike_v4"
+cd "$ROOT_DIR/contract/obscura_protocol_v7"
 leo build
 echo "  ✓ Contract built"
 

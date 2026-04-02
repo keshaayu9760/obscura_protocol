@@ -1,4 +1,4 @@
-# VEIL STRIKE — Automated Strike Rounds System
+# OBSCURA PROTOCOL — Automated Eclipse Rounds System
 
 Complete technical reference for the auto-round system: architecture, setup, code flow, debugging, and testing.
 
@@ -31,14 +31,14 @@ Complete technical reference for the auto-round system: architecture, setup, cod
 
 ## Overview
 
-Strike Rounds are automated 15-minute prediction markets on asset prices (BTC, ETH, ALEO). A backend bot creates markets on the Aleo blockchain, waits for the round to expire, compares start/end prices, and settles the market (UP or DOWN). Users bet during the round window using the frontend Rounds page.
+Eclipse Rounds are automated 15-minute prediction markets on asset prices (BTC, ETH, ALEO). A backend bot creates markets on the Aleo blockchain, waits for the round to expire, compares start/end prices, and settles the market (UP or DOWN). Users bet during the round window using the frontend Rounds page.
 
 Key facts:
 - **3 active slots**: BTC-ALEO, ETH-ALEO, ALEO-ALEO
 - **15-minute rounds** with automatic creation → settlement → next round
 - **Delegated proving** via Provable API (ZK proofs generated remotely in ~15-30s)
 - **On-chain settlement** via `flash_settle` for ALL markets (including empty ones)
-- **Program**: `veil_strike_v6.aleo` on Aleo testnet
+- **Program**: `obscura_protocol_v7.aleo` on Aleo testnet
 
 ---
 
@@ -62,9 +62,9 @@ Key facts:
        ▼
 ┌──────────────────────────────────────┐
 │           Express Backend            │
-│  /api/lightning/bot/status           │
-│  /api/lightning/bot/rounds           │
-│  /api/markets (includes lightning)   │
+│  /api/eclipse/bot/status           │
+│  /api/eclipse/bot/rounds           │
+│  /api/markets (includes ECLIPSE)   │
 └──────────────┬───────────────────────┘
                │
                ▼
@@ -84,7 +84,7 @@ Key facts:
 ```bash
 curl -X POST https://api.provable.com/consumers \
   -H "Content-Type: application/json" \
-  -d '{"username":"veil-strike"}'
+  -d '{"username":"obscura-protocol"}'
 ```
 
 Response:
@@ -185,18 +185,18 @@ Handles ZK proof generation via Provable's remote proving service.
 
 ### 3. Indexer (`backend/src/services/indexer.ts`)
 
-Maintains the market registry with metadata not stored on-chain (question text, outcomes, `isLightning` flag, `botEndTime`).
+Maintains the market registry with metadata not stored on-chain (question text, outcomes, `isEclipse` flag, `botEndTime`).
 
-- **MarketMeta**: `{ questionHash, question, outcomes, isLightning, tokenType?, botEndTime? }`
+- **MarketMeta**: `{ questionHash, question, outcomes, isEclipse, tokenType?, botEndTime? }`
 - `botEndTime`: wall-clock millisecond timestamp, used for accurate countdown
-- `clearAllLightningFlags()`: resets `isLightning=false` on all markets (called at bot startup)
+- `clearAllECLIPSEFlags()`: resets `isEclipse=false` on all markets (called at bot startup)
 - Persists to `backend/data/dynamic-markets.json`
 
 ### 4. Scanner (`backend/src/services/scanner.ts`)
 
 Polls the chain for new transactions, discovers markets created by the bot.
 
-- **Pending meta system**: `savePendingMeta(questionHash, meta)` → scanner tags discovered markets as lightning
+- **Pending meta system**: `savePendingMeta(questionHash, meta)` → scanner tags discovered markets as ECLIPSE
 - `deletePendingMeta(questionHash)`: called after bot extracts market_id from tx response
 - Auto-cleans entries older than 24 hours
 
@@ -211,11 +211,11 @@ Fetches live asset prices from CoinGecko for BTC, ETH, ALEO. The round bot uses 
 ### Phase 1: Market Creation (`createMarketForSlot`)
 
 ```
-1. Generate question hash: "BTC Strike Round #N" → deterministic field element
+1. Generate question hash: "BTC Eclipse Round #N" → deterministic field element
 2. Generate random nonce
 3. Fetch current block height
 4. Calculate on-chain deadline: currentBlock + ceil(15*60/5) + 30 = currentBlock + 210
-5. Save pending meta (so scanner knows this is a lightning market)
+5. Save pending meta (so scanner knows this is a ECLIPSE market)
 6. Call delegatedCreateMarket() via Provable DPS
 7. Extract real market_id from DPS transaction response
 8. Register market in indexer with botEndTime = Date.now() + 15*60*1000
@@ -261,7 +261,7 @@ On backend restart, the bot loads state from disk and **intelligently recovers**
 for (const slot of botState.slots) {
   if (slot.state === 'open' && slot.marketId && slot.endTime > Date.now()) {
     // Round still live — re-register and keep going
-    registerMarket(slot.marketId, { ...meta, isLightning: true, botEndTime: slot.endTime });
+    registerMarket(slot.marketId, { ...meta, isEclipse: true, botEndTime: slot.endTime });
   } else if (slot.state !== 'idle') {
     slot.state = 'idle';
     slot.marketId = null;
@@ -318,7 +318,7 @@ The SDK's `submitProvingRequestSafe` defaults to the explorer API URL (`api.expl
 
 ## On-Chain Contract
 
-Program: `veil_strike_v6.aleo`
+Program: `obscura_protocol_v7.aleo`
 
 ### Key Transitions Used by Bot
 
@@ -384,7 +384,7 @@ function extractMarketIdFromTx(transaction: any): string | null {
 
 Backup for when `extractMarketIdFromTx` fails:
 
-1. Before creating tx: `savePendingMeta(questionHash, { question, outcomes, isLightning: true })`
+1. Before creating tx: `savePendingMeta(questionHash, { question, outcomes, isEclipse: true })`
 2. Scanner discovers the market on-chain → matches `questionHash` → tags it with pending meta
 3. After extracting market_id: `deletePendingMeta(questionHash)` — prevents scanner from re-tagging old markets with the same questionHash pattern
 
@@ -458,14 +458,14 @@ Each `flash_settle` takes ~15-30s of DPS proving time. With `useFeeMaster: true`
 
 ### Rounds Page (`frontend/src/pages/Rounds.tsx`)
 
-- Displays active Strike Round markets from `/api/markets` (filtered by `isLightning: true`)
+- Displays active Eclipse Round markets from `/api/markets` (filtered by `isEclipse: true`)
 - Shows countdown timer using `market.endTime` (wall-clock ms)
 - Bet placement calls `acquire_shares` on-chain
 - After round resolves, checks `market.resolvedOutcome` to mark bets as WON/LOST
 
-### ActiveRounds Component (`frontend/src/components/lightning/ActiveRounds.tsx`)
+### ActiveRounds Component (`frontend/src/components/ECLIPSE/ActiveRounds.tsx`)
 
-- Filters: `allMarkets.filter(m => m.isLightning && m.question.toLowerCase().includes('strike round'))`
+- Filters: `allMarkets.filter(m => m.isEclipse && m.question.toLowerCase().includes('strike round'))`
 - State display:
   - `secondsLeft > 0` → countdown timer + bet buttons (UP/DOWN)
   - `secondsLeft === 0 && status === 'active'` → "SETTLING..." badge + info message:
@@ -509,7 +509,7 @@ if (market?.resolvedOutcome) {
 PENDING bets older than 30 minutes (2x round duration) are automatically expired as LOST. This handles edge cases where a market was never settled (bot crash, restart, etc.):
 
 ```typescript
-// In lightningBetStore.ts — only calls set() when there are actual stale bets:
+// In eclipseBetStore.ts — only calls set() when there are actual stale bets:
 expireStaleBets: (maxAgeMs) => {
   const cutoff = Date.now() - maxAgeMs;
   const hasStale = get().bets.some((b) => !b.result && b.timestamp <= cutoff);
@@ -536,7 +536,7 @@ useEffect(() => {
 
 ## API Endpoints
 
-### Lightning Routes (`/api/lightning/...`)
+### ECLIPSE Routes (`/api/eclipse/...`)
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
@@ -547,11 +547,11 @@ useEffect(() => {
 | POST | `/bot/force-settle` | Force settle a slot `{ slotId, winningOutcome }` |
 | POST | `/admin/resolve` | Admin resolve market `{ marketId, winningOutcome, tokenType? }` |
 | POST | `/admin/create-replacement` | Create replacement market after manually resolving |
-| GET | `/admin/markets` | List active lightning markets |
+| GET | `/admin/markets` | List active ECLIPSE markets |
 
 ### Market Routes (`/api/markets`)
 
-Markets with `isLightning: true` are Strike Round markets. The frontend filters these for the Rounds page.
+Markets with `isEclipse: true` are Eclipse Round markets. The frontend filters these for the Rounds page.
 
 ---
 
@@ -587,7 +587,7 @@ Stores full bot state including all slot info, round numbers, and counters. Load
 
 ### `backend/data/dynamic-markets.json`
 
-Registry of all discovered/registered markets with metadata. Includes `isLightning`, `botEndTime`, question text, outcomes.
+Registry of all discovered/registered markets with metadata. Includes `isEclipse`, `botEndTime`, question text, outcomes.
 
 ### Startup Recovery
 
@@ -599,7 +599,7 @@ On restart, the bot recovers slots intelligently:
 for (const slot of botState.slots) {
   if (slot.state === 'open' && slot.marketId && slot.endTime > Date.now()) {
     // Round still live — re-register and keep going
-    registerMarket(slot.marketId, { ...meta, isLightning: true, botEndTime: slot.endTime });
+    registerMarket(slot.marketId, { ...meta, isEclipse: true, botEndTime: slot.endTime });
   } else if (slot.state !== 'idle') {
     slot.state = 'idle';
     slot.roundNumber++;
@@ -615,23 +615,23 @@ This prevents two problems:
 
 ## Startup Cleanup
 
-### `clearStaleLightningFlags()`
+### `clearStaleECLIPSEFlags()`
 
-Called at bot startup. Only clears `isLightning` on markets that are **resolved/cancelled** or whose `botEndTime` is more than 60 minutes in the past (truly orphaned). This prevents wiping flags on active markets that are still tradable.
+Called at bot startup. Only clears `isEclipse` on markets that are **resolved/cancelled** or whose `botEndTime` is more than 60 minutes in the past (truly orphaned). This prevents wiping flags on active markets that are still tradable.
 
 ```typescript
-export function clearStaleLightningFlags(): number {
+export function clearStaleECLIPSEFlags(): number {
   const now = Date.now();
   const STALE_THRESHOLD = 60 * 60 * 1000; // 60 min
   let count = 0;
   for (const [id, meta] of Object.entries(MARKET_REGISTRY)) {
-    if (!meta.isLightning) continue;
+    if (!meta.isEclipse) continue;
     const cached = marketsCache.find((m) => m.id === id);
     if (cached && (cached.status === 'resolved' || cached.status === 'cancelled')) {
-      meta.isLightning = false; count++; continue;
+      meta.isEclipse = false; count++; continue;
     }
     if (meta.botEndTime && meta.botEndTime < now - STALE_THRESHOLD) {
-      meta.isLightning = false; count++;
+      meta.isEclipse = false; count++;
     }
   }
   if (count > 0) persistRegistry();
@@ -639,22 +639,22 @@ export function clearStaleLightningFlags(): number {
 }
 ```
 
-> **IMPORTANT**: Previous versions used `clearAllLightningFlags()` which wiped ALL flags indiscriminately. This caused active rounds to be orphaned on redeploy. The current approach only clears resolved/stale markets.
+> **IMPORTANT**: Previous versions used `clearAllECLIPSEFlags()` which wiped ALL flags indiscriminately. This caused active rounds to be orphaned on redeploy. The current approach only clears resolved/stale markets.
 
 ### Market Adoption on Restart
 
-After clearing stale flags, the bot scans the market cache for active lightning markets matching each slot. If found (same asset, same tokenType, still has time remaining), the bot **adopts** the existing market instead of creating a duplicate.
+After clearing stale flags, the bot scans the market cache for active ECLIPSE markets matching each slot. If found (same asset, same tokenType, still has time remaining), the bot **adopts** the existing market instead of creating a duplicate.
 
 ### Auto-Resolver Safety Guards
 
-The auto-resolver skips lightning markets via three checks:
-1. `if (market.isLightning) continue;` — flag-based check
-2. `if (market.question.includes('Strike Round')) continue;` — question-text fallback
+The auto-resolver skips ECLIPSE markets via three checks:
+1. `if (market.isEclipse) continue;` — flag-based check
+2. `if (market.question.includes('Eclipse Round')) continue;` — question-text fallback
 3. `if (lifespan > 0 && lifespan < 3h) continue;` — short-lived markets (likely bot-created rounds whose metadata was lost on redeploy)
 
 ### `deletePendingMeta()`
 
-After the bot extracts the real market_id from the DPS transaction response, it deletes the pending meta for that `questionHash`. This prevents the scanner from later tagging a different (older) market with the same hash as a lightning market.
+After the bot extracts the real market_id from the DPS transaction response, it deletes the pending meta for that `questionHash`. This prevents the scanner from later tagging a different (older) market with the same hash as a ECLIPSE market.
 
 ---
 
@@ -662,7 +662,7 @@ After the bot extracts the real market_id from the DPS transaction response, it 
 
 ### 1. CX/SD Stablecoin Slots Disabled
 
-The `veil_strike_v6_cx.aleo` and `veil_strike_v6_sd.aleo` contracts require private Token records + MerkleProofs as the 9th and 10th inputs to `open_market`. These cannot be constructed via the current delegated proving flow. Only the base `veil_strike_v6.aleo` (ALEO-denominated) works.
+The `obscura_protocol_v7_cx.aleo` and `obscura_protocol_v7_sd.aleo` contracts require private Token records + MerkleProofs as the 9th and 10th inputs to `open_market`. These cannot be constructed via the current delegated proving flow. Only the base `obscura_protocol_v7.aleo` (ALEO-denominated) works.
 
 ### 2. Bets Near Deadline May Be Rejected
 
@@ -684,7 +684,7 @@ Each DPS call (create or settle) takes ~15-30 seconds. With 3 slots, a full roun
 - Market refresh: every 5 minutes (cron `*/5`)
 - Scanner (new tx detection): every 2 minutes (cron `*/2`)
 
-This means a newly created market may take up to 5 minutes to appear in the `/api/markets` response. However, the bot registers markets directly with the indexer at creation time, so newly created lightning markets appear immediately.
+This means a newly created market may take up to 5 minutes to appear in the `/api/markets` response. However, the bot registers markets directly with the indexer at creation time, so newly created ECLIPSE markets appear immediately.
 
 ---
 
@@ -708,15 +708,15 @@ This means a newly created market may take up to 5 minutes to appear in the `/ap
 ### Markets Not Appearing on Rounds Page
 
 1. Check backend logs for `[RoundBot] ... extracted market_id: ...`
-2. Verify market registered with `isLightning: true` in `dynamic-markets.json`
-3. Check frontend filter: market question must include "Strike Round"
+2. Verify market registered with `isEclipse: true` in `dynamic-markets.json`
+3. Check frontend filter: market question must include "Eclipse Round"
 4. Force refresh: restart backend (clears + re-registers)
 
 ### "AWAITING RESOLVE" Stuck
 
 This should no longer happen after the virtual-reset removal. All markets get `flash_settle`. If it still occurs:
 1. Check bot logs for settle errors
-2. Use admin API: `POST /api/lightning/admin/resolve { marketId, winningOutcome: 1 }`
+2. Use admin API: `POST /api/eclipse/admin/resolve { marketId, winningOutcome: 1 }`
 3. Check `flash_settle` requirements: market must be ACTIVE or CLOSED, caller must be resolver
 
 ### Bet Rejected on Chain
@@ -744,7 +744,7 @@ Wrong deadline calculation. Check that `ACTUAL_BLOCK_TIME_S = 5` is used, not 15
 ### Old Markets Polluting UI
 
 1. Stop backend
-2. Edit `backend/data/dynamic-markets.json`: Set `"isLightning": false` on stale entries
+2. Edit `backend/data/dynamic-markets.json`: Set `"isEclipse": false` on stale entries
 3. Delete `backend/data/round-bot-state.json` for a fresh start
 4. Restart backend
 
@@ -778,8 +778,8 @@ npm run dev
 Watch logs for:
 ```
 [RoundBot] Started — 3 slots, 15min rounds
-[RoundBot] Creating BTC-ALEO round #1: "BTC Strike Round #1"
-[DelegatedProver] Building proving request: veil_strike_v6.aleo.open_market(...)
+[RoundBot] Creating BTC-ALEO round #1: "BTC Eclipse Round #1"
+[DelegatedProver] Building proving request: obscura_protocol_v7.aleo.open_market(...)
 [DelegatedProver] Submitting to Provable for remote proving...
 [DelegatedProver] Success: tx=at1... broadcast=Accepted (25000ms)
 [RoundBot] BTC-ALEO extracted market_id: 12345...field
@@ -797,7 +797,7 @@ After 15 minutes:
 
 1. Open `http://localhost:5173/rounds`
 2. Connect wallet (Leo Wallet / Puzzle Wallet)
-3. Select a market (e.g., BTC Strike Round)
+3. Select a market (e.g., BTC Eclipse Round)
 4. Choose UP or DOWN
 5. Enter amount and submit
 6. Wallet popup → approve transaction
@@ -807,21 +807,21 @@ After 15 minutes:
 
 ```bash
 # Check bot status
-curl http://localhost:3001/api/lightning/bot/status
+curl http://localhost:3001/api/eclipse/bot/status
 
 # Check active rounds
-curl http://localhost:3001/api/lightning/bot/rounds
+curl http://localhost:3001/api/eclipse/bot/rounds
 
 # Force settle a slot (emergency)
-curl -X POST http://localhost:3001/api/lightning/bot/force-settle \
+curl -X POST http://localhost:3001/api/eclipse/bot/force-settle \
   -H "Content-Type: application/json" \
   -d '{"slotId":"BTC-ALEO","winningOutcome":1}'
 
 # Stop bot
-curl -X POST http://localhost:3001/api/lightning/bot/stop
+curl -X POST http://localhost:3001/api/eclipse/bot/stop
 
 # Start bot
-curl -X POST http://localhost:3001/api/lightning/bot/start
+curl -X POST http://localhost:3001/api/eclipse/bot/start
 ```
 
 ### 5. Test Settlement of Empty Markets
@@ -836,13 +836,13 @@ curl -X POST http://localhost:3001/api/lightning/bot/start
 
 ```bash
 # Check market status on-chain
-curl "https://api.explorer.provable.com/v1/testnet/program/veil_strike_v6.aleo/mapping/markets/MARKET_ID_FIELD"
+curl "https://api.explorer.provable.com/v1/testnet/program/obscura_protocol_v7.aleo/mapping/markets/MARKET_ID_FIELD"
 
 # Check pool volume
-curl "https://api.explorer.provable.com/v1/testnet/program/veil_strike_v6.aleo/mapping/amm_pools/MARKET_ID_FIELD"
+curl "https://api.explorer.provable.com/v1/testnet/program/obscura_protocol_v7.aleo/mapping/amm_pools/MARKET_ID_FIELD"
 
 # Check resolution
-curl "https://api.explorer.provable.com/v1/testnet/program/veil_strike_v6.aleo/mapping/market_resolutions/MARKET_ID_FIELD"
+curl "https://api.explorer.provable.com/v1/testnet/program/obscura_protocol_v7.aleo/mapping/market_resolutions/MARKET_ID_FIELD"
 ```
 
 ---
@@ -856,9 +856,9 @@ curl "https://api.explorer.provable.com/v1/testnet/program/veil_strike_v6.aleo/m
 | `backend/src/services/indexer.ts` | Market registry & metadata |
 | `backend/src/services/scanner.ts` | Chain polling & pending meta |
 | `backend/src/services/oracle.ts` | Price feeds (CoinGecko) |
-| `backend/src/services/lightning-manager.ts` | Legacy lightning manager |
-| `backend/src/services/auto-resolver.ts` | Auto-resolver (skips lightning markets) |
-| `backend/src/routes/lightning.ts` | API routes for bot + admin |
+| `backend/src/services/eclipse-manager.ts` | Legacy ECLIPSE manager |
+| `backend/src/services/auto-resolver.ts` | Auto-resolver (skips ECLIPSE markets) |
+| `backend/src/routes/eclipse.ts` | API routes for bot + admin |
 | `backend/src/config.ts` | Environment config |
 | `backend/src/index.ts` | Express server + cron jobs |
 | `backend/scripts/test-delegated-proving.ts` | DPS connectivity test |
@@ -866,9 +866,9 @@ curl "https://api.explorer.provable.com/v1/testnet/program/veil_strike_v6.aleo/m
 | `backend/data/dynamic-markets.json` | Market registry persistence |
 | `backend/.env` | Environment variables |
 | `frontend/src/pages/Rounds.tsx` | Rounds page (bet + claim UI) |
-| `frontend/src/stores/lightningBetStore.ts` | Bet storage + expiry (zustand + localStorage) |
-| `frontend/src/components/lightning/ActiveRounds.tsx` | Active rounds display component |
-| `contract/veil_strike_v6/src/main.leo` | On-chain contract (17 transitions) |
+| `frontend/src/stores/eclipseBetStore.ts` | Bet storage + expiry (zustand + localStorage) |
+| `frontend/src/components/ECLIPSE/ActiveRounds.tsx` | Active rounds display component |
+| `contract/obscura_protocol_v7/src/main.leo` | On-chain contract (17 transitions) |
 
 ---
 
@@ -893,21 +893,21 @@ Not settling empty markets on-chain leaves them as ACTIVE forever. Always `flash
 The DPS tx response ID is `at1...`, but the market's on-chain ID is a `field` value. Must parse the transaction's future output to extract the real market_id.
 
 ### 7. Scanner + Pending Meta Race Condition
-Without `deletePendingMeta`, the scanner can tag old markets (same questionHash pattern) as new lightning markets. Always clean up pending meta after direct registration.
+Without `deletePendingMeta`, the scanner can tag old markets (same questionHash pattern) as new ECLIPSE markets. Always clean up pending meta after direct registration.
 
-### 8. `clearStaleLightningFlags()` at Startup
-Previous versions used `clearAllLightningFlags()` which wiped ALL markets — including active live rounds. This caused:
-- Active rounds orphaned (no `isLightning` flag → disappeared from Rounds page)
+### 8. `clearStaleECLIPSEFlags()` at Startup
+Previous versions used `clearAllECLIPSEFlags()` which wiped ALL markets — including active live rounds. This caused:
+- Active rounds orphaned (no `isEclipse` flag → disappeared from Rounds page)
 - Scanner re-discovered old markets without pending meta → generic question text
 - Auto-resolver tried `lock_market` on those orphaned markets (expensive, failed)
 - Nonce conflicts between auto-resolver and round bot's `flash_settle`
 
-**Fix**: `clearStaleLightningFlags()` only clears resolved/cancelled/stale (>60 min past). Bot adopts existing active lightning markets on startup.
+**Fix**: `clearStaleECLIPSEFlags()` only clears resolved/cancelled/stale (>60 min past). Bot adopts existing active ECLIPSE markets on startup.
 
-### 9. Auto-Resolver Must Skip Lightning Markets
-The auto-resolver tries to `lock_market` expired markets, which crashes for lightning markets (wrong flow). Three safety guards:
-1. `if (market.isLightning) continue;` — flag-based
-2. `if (market.question.includes('Strike Round')) continue;` — question-text fallback
+### 9. Auto-Resolver Must Skip Eclipse Markets
+The auto-resolver tries to `lock_market` expired markets, which crashes for eclipse markets (wrong flow). Three safety guards:
+1. `if (market.isEclipse) continue;` — flag-based
+2. `if (market.question.includes('Eclipse Round')) continue;` — question-text fallback
 3. Short-lifespan filter (`<3h`) — catches bot-created rounds whose metadata was lost on redeploy
 
 ### 10. Cron Frequency Matters
@@ -925,5 +925,6 @@ Calling a zustand action that uses `set()` inside a `useEffect` that depends on 
 ### 15. UTXO Bet Cooldown Is Essential
 Aleo's UTXO model means each credits record can only be consumed once. If a user bets on BTC and immediately bets on ETH, the wallet may reuse the same record → "input ID already exists in the ledger" rejection. A 40-second global cooldown between bets prevents this by waiting for the previous transaction to confirm on-chain.
 
-### 16. Never Wipe Active Lightning Flags on Redeploy
-The old `clearAllLightningFlags()` approach caused a cascade: active rounds orphaned → scanner re-discovered them without metadata → auto-resolver tried expensive `lock_market` → nonce conflicts with the bot → settlement stuck. Use `clearStaleLightningFlags()` (only resolved/cancelled/stale) and adopt existing active markets on startup.
+### 16. Never Wipe Active ECLIPSE Flags on Redeploy
+The old `clearAllECLIPSEFlags()` approach caused a cascade: active rounds orphaned → scanner re-discovered them without metadata → auto-resolver tried expensive `lock_market` → nonce conflicts with the bot → settlement stuck. Use `clearStaleECLIPSEFlags()` (only resolved/cancelled/stale) and adopt existing active markets on startup.
+

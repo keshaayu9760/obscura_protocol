@@ -9,11 +9,11 @@ interface ToastProps {
 }
 
 const typeStyles = {
-  success: { bg: 'border-accent-green/30 bg-accent-green/5', icon: 'text-accent-green' },
-  error: { bg: 'border-accent-red/30 bg-accent-red/5', icon: 'text-accent-red' },
-  warning: { bg: 'border-yellow-500/30 bg-yellow-500/5', icon: 'text-yellow-500' },
-  info: { bg: 'border-teal/30 bg-teal/5', icon: 'text-teal' },
-  pending: { bg: 'border-amber-500/30 bg-amber-500/5', icon: 'text-amber-400' },
+  success: { bg: 'border-accent-green/30 bg-accent-green/8', icon: 'text-accent-green', label: 'Cleared' },
+  error: { bg: 'border-accent-red/30 bg-accent-red/8', icon: 'text-accent-red', label: 'Interrupted' },
+  warning: { bg: 'border-yellow-500/30 bg-yellow-500/8', icon: 'text-yellow-400', label: 'Review' },
+  info: { bg: 'border-teal/30 bg-teal/8', icon: 'text-teal', label: 'Notice' },
+  pending: { bg: 'border-amber-500/30 bg-amber-500/8', icon: 'text-amber-400', label: 'Signing' },
 };
 
 export default function Toast({ notification, onDismiss }: ToastProps) {
@@ -32,7 +32,7 @@ export default function Toast({ notification, onDismiss }: ToastProps) {
       initial={{ opacity: 0, x: 50, scale: 0.95 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 50, scale: 0.95 }}
-      className={`flex items-start gap-3 p-4 rounded-xl border backdrop-blur-xl ${style.bg}`}
+      className={`flex items-start gap-3 rounded-3xl border p-4 shadow-card backdrop-blur-xl ${style.bg}`}
     >
       <div className={style.icon}>
         {notification.type === 'pending' ? (
@@ -47,20 +47,21 @@ export default function Toast({ notification, onDismiss }: ToastProps) {
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-white">{notification.title}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{notification.message}</p>
+        <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-smoke/55">{style.label}</p>
+        <p className="mt-1 text-sm font-medium text-white">{notification.title}</p>
+        <p className="mt-1 text-xs leading-5 text-smoke/70">{notification.message}</p>
         {notification.link && (
           <a
             href={notification.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-teal hover:text-teal/80 mt-1 underline underline-offset-2"
+            className="mt-2 inline-flex items-center gap-1 text-xs text-teal underline underline-offset-2 hover:text-teal/80"
           >
-            {notification.linkLabel || 'View on Explorer'} ↗
+            {notification.linkLabel || 'Open receipt'} ↗
           </a>
         )}
       </div>
-      <button onClick={() => onDismiss(notification.id)} className="text-gray-500 hover:text-gray-300">
+      <button onClick={() => onDismiss(notification.id)} className="text-smoke/45 transition-colors hover:text-white">
         <CloseIcon className="w-4 h-4" />
       </button>
     </motion.div>
@@ -75,7 +76,7 @@ export function ToastContainer({
   onDismiss: (id: string) => void;
 }) {
   return (
-    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-80">
+    <div className="fixed bottom-4 right-4 z-[100] flex w-80 flex-col gap-2">
       <AnimatePresence>
         {notifications.map((n) => (
           <Toast key={n.id} notification={n} onDismiss={onDismiss} />

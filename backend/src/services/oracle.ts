@@ -19,7 +19,7 @@ async function fetchWithTimeout(url: string, timeoutMs = 10000, headers?: Record
     return await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'VeilStrike/1.0',
+        'User-Agent': 'ObscuraProtocol/1.0',
         'Accept': 'application/json',
         ...headers,
       },
@@ -315,13 +315,13 @@ export function getCachedPrices(): OraclePrices {
   return cachedPrices;
 }
 
-// ========== Lightning Rounds ==========
+// ========== ECLIPSE Rounds ==========
 // Deterministic 5-minute rounds based on wall clock time.
 // Each round starts at the nearest 5-minute boundary (e.g., 15:00, 15:05, 15:10).
 // A round is "open" for the first 4 minutes, "locked" in the last 1 minute,
 // then resolves by comparing start vs end price.
 
-export interface LightningRound {
+export interface EclipseRound {
   id: string;
   asset: 'BTC' | 'ETH' | 'ALEO';
   startTime: number;
@@ -345,7 +345,7 @@ export function recordPriceSnapshot(): void {
   const p = getCachedPrices();
   if (p.btc > 0) {
     priceHistory.push({ timestamp: Date.now(), btc: p.btc, eth: p.eth, aleo: p.aleo });
-    // Keep last 2 hours of data (so older lightning rounds can still resolve bets)
+    // Keep last 2 hours of data (so older ECLIPSE rounds can still resolve bets)
     const cutoff = Date.now() - 120 * 60 * 1000;
     while (priceHistory.length > 0 && priceHistory[0].timestamp < cutoff) {
       priceHistory.shift();
@@ -374,10 +374,10 @@ function getRoundStart(time: number): number {
   return Math.floor(time / ROUND_DURATION) * ROUND_DURATION;
 }
 
-export function getLightningRounds(): LightningRound[] {
+export function getEclipseRounds(): EclipseRound[] {
   const now = Date.now();
   const currentRoundStart = getRoundStart(now);
-  const rounds: LightningRound[] = [];
+  const rounds: EclipseRound[] = [];
 
   for (const asset of ASSETS) {
     // Previous rounds (resolved) — keep 12 rounds (1 hour) so client bets can resolve
@@ -441,3 +441,4 @@ export function getLightningRounds(): LightningRound[] {
 
   return rounds;
 }
+

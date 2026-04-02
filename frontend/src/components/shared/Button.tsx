@@ -37,7 +37,7 @@ export default function Button({
       className={`
         inline-flex items-center justify-center gap-2 font-heading font-medium
         transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed
-        ${variants[variant]} ${variant === 'primary' || variant === 'secondary' || variant === 'ghost' ? '' : sizes[size]}
+        ${variants[variant]} ${variant === 'danger' ? sizes[size] : ''}
         ${className}
       `}
       disabled={disabled || loading}

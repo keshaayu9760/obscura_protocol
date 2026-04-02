@@ -6,8 +6,8 @@ export default function CreateMarket() {
   return (
     <div>
       <PageHeader
-        title="Create Event Market"
-        subtitle="Launch a prediction market on any real-world event — fully private on Aleo"
+        title="Market Studio"
+        subtitle="Compose a new event book, parameterize it, and send it to chain with private settlement."
       />
 
       <div className="max-w-2xl mx-auto mt-6">
@@ -15,7 +15,7 @@ export default function CreateMarket() {
           <CreateEventForm />
         </Card>
         <p className="text-xs text-smoke/40 text-center mt-4">
-          Strike Rounds are created automatically every 15 minutes by the Round Bot.
+          Pulse sessions are created automatically every 15 minutes by the session operator.
         </p>
       </div>
     </div>

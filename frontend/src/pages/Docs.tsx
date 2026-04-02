@@ -6,8 +6,8 @@ export default function Docs() {
   return (
     <div>
       <PageHeader
-        title="Documentation"
-        subtitle="Learn how Veil Strike works under the hood"
+        title="Field Manual"
+        subtitle="Operational notes for the Obscura stack, contracts, and settlement flow."
       />
 
       <div className="space-y-8 mt-6 max-w-4xl">
@@ -15,23 +15,23 @@ export default function Docs() {
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <ShieldIcon className="w-6 h-6 text-teal" />
-            <h2 className="text-lg font-heading font-bold text-white">What is Veil Strike?</h2>
+            <h2 className="text-lg font-heading font-bold text-white">What is Obscura Protocol?</h2>
           </div>
           <div className="text-sm text-gray-400 space-y-3 leading-relaxed">
             <p>
-              Veil Strike is a privacy-first prediction market protocol built on the Aleo blockchain.
+              Obscura Protocol is a privacy-first prediction market protocol built on the Aleo blockchain.
               It uses zero-knowledge proofs to protect trader identities while maintaining transparent market mechanics.
             </p>
             <p>
-              Unlike traditional prediction markets (Polymarket, Augur), Veil Strike ensures that no one &mdash;
+              Unlike traditional prediction markets (Polymarket, Augur), Obscura Protocol ensures that no one &mdash;
               not even the protocol operators &mdash; can see who is trading, how much they hold, or their
               profit/loss history.
             </p>
             <p>
-              <span className="text-white font-medium">v6 Architecture:</span> Three independent Leo programs &mdash;
-              <code className="text-teal/80 bg-dark-200 px-1 rounded text-xs">veil_strike_v6.aleo</code> (ALEO + Governance),
-              <code className="text-teal/80 bg-dark-200 px-1 rounded text-xs">veil_strike_v6_cx.aleo</code> (USDCx), and
-              <code className="text-teal/80 bg-dark-200 px-1 rounded text-xs">veil_strike_v6_sd.aleo</code> (USAD). Total: 47 transitions across 3 deployed programs.
+              <span className="text-white font-medium">v7 Architecture:</span> Three independent Leo programs &mdash;
+              <code className="text-teal/80 bg-dark-200 px-1 rounded text-xs">obscura_protocol_v7.aleo</code> (ALEO + Governance),
+              <code className="text-teal/80 bg-dark-200 px-1 rounded text-xs">obscura_protocol_v7_cx.aleo</code> (USDCx), and
+              <code className="text-teal/80 bg-dark-200 px-1 rounded text-xs">obscura_protocol_v7_sd.aleo</code> (USAD). Total: 54 transitions across 3 programs prepared for deployment.
             </p>
           </div>
         </Card>
@@ -44,7 +44,7 @@ export default function Docs() {
           </div>
           <div className="text-sm text-gray-400 space-y-3 leading-relaxed">
             <p>
-              Veil Strike uses a <span className="text-teal">Fixed Product Market Maker (FPMM)</span> — the same
+              Obscura Protocol uses a <span className="text-teal">Fixed Product Market Maker (FPMM)</span> — the same
               model used by Uniswap. Each market has reserves for each outcome, and prices are determined
               by the ratio of reserves.
             </p>
@@ -71,7 +71,7 @@ export default function Docs() {
           </div>
           <div className="text-sm text-gray-400 space-y-3 leading-relaxed">
             <p>
-              Veil Strike achieves privacy through Aleo&apos;s record model and careful program design:
+              Obscura Protocol achieves privacy through Aleo&apos;s record model and careful program design:
             </p>
             <ul className="space-y-2 ml-4">
               <li className="flex items-start gap-2">
@@ -94,15 +94,15 @@ export default function Docs() {
           </div>
         </Card>
 
-        {/* Lightning Markets */}
+        {/* Eclipse Markets */}
         <Card className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <BoltIcon className="w-6 h-6 text-amber-400" />
-            <h2 className="text-lg font-heading font-bold text-white">Strike Rounds</h2>
+            <h2 className="text-lg font-heading font-bold text-white">Eclipse Rounds</h2>
           </div>
           <div className="text-sm text-gray-400 space-y-3 leading-relaxed">
             <p>
-              Strike Rounds are 15-minute price prediction markets where you bet UP or DOWN
+              Eclipse Rounds are 15-minute price prediction markets where you bet UP or DOWN
               on BTC, ETH, or ALEO prices. Three concurrent slots run — all denominated in ALEO.
             </p>
             <p>
@@ -151,7 +151,7 @@ export default function Docs() {
           </div>
           <div className="text-sm text-gray-400 space-y-3 leading-relaxed">
             <p>
-              Veil Strike integrates with Provable&apos;s Shield Wallet for seamless ZK proof generation
+              Obscura Protocol integrates with Provable&apos;s Shield Wallet for seamless ZK proof generation
               via delegated proving. Proofs are generated server-side (~14 seconds) instead of
               in-browser, dramatically improving UX.
             </p>

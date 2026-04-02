@@ -7,7 +7,7 @@ import EmptyState from '@/components/shared/EmptyState';
 import { ClockIcon } from '@/components/icons';
 import CryptoIcon from '@/components/shared/CryptoIcon';
 import RefreshButton from '@/components/shared/RefreshButton';
-import { useLightningBetStore } from '@/stores/lightningBetStore';
+import { useEclipseBetStore } from '@/stores/eclipseBetStore';
 import { useMarketStore } from '@/stores/marketStore';
 import { useTransaction } from '@/hooks/useTransaction';
 import type { ShareRecord } from '@/hooks/useTransaction';
@@ -22,7 +22,7 @@ const ASSET_TERMS: Record<string, string[]> = {
   ALEO: ['ALEO'],
 };
 
-interface LightningRound {
+interface EclipseRound {
   id: string;
   asset: 'BTC' | 'ETH' | 'ALEO';
   startTime: number;
@@ -33,13 +33,13 @@ interface LightningRound {
   result: 'up' | 'down' | null;
 }
 
-interface LightningHistoryProps {
+interface EclipseHistoryProps {
   markets: never[];
 }
 
-export default function LightningHistory({ }: LightningHistoryProps) {
-  const [rounds, setRounds] = useState<LightningRound[]>([]);
-  const bets = useLightningBetStore((s) => s.bets);
+export default function EclipseHistory({ }: EclipseHistoryProps) {
+  const [rounds, setRounds] = useState<EclipseRound[]>([]);
+  const bets = useEclipseBetStore((s) => s.bets);
   const recentBets = bets.slice(0, 20);
   const { status: txStatus, execute, fetchShareRecords } = useTransaction();
   const allMarkets = useMarketStore((s) => s.markets);
@@ -47,10 +47,10 @@ export default function LightningHistory({ }: LightningHistoryProps) {
 
   const fetchRounds = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/lightning`);
+      const res = await fetch(`${API_BASE}/eclipse`);
       if (res.ok) {
         const data = await res.json();
-        setRounds((data.rounds || []).filter((r: LightningRound) => r.status === 'resolved'));
+        setRounds((data.rounds || []).filter((r: EclipseRound) => r.status === 'resolved'));
       }
     } catch { /* ignore */ }
   }, []);
@@ -109,10 +109,10 @@ export default function LightningHistory({ }: LightningHistoryProps) {
   const resolvedBets = recentBets.filter((b) => b.result);
   const pendingBets = recentBets.filter((b) => !b.result);
 
-  // Only show share records for lightning markets that are resolved (winning shares to claim)
+  // Only show share records for Eclipse markets that are resolved (winning shares to claim)
   const claimableRecords = shareRecords.filter((r) => {
     const market = allMarkets.find((m) => m.id === r.marketId);
-    if (!market || !market.isLightning) return false;
+    if (!market || !market.isEclipse) return false;
     // Only show if market is resolved and this is the winning outcome
     return market.status === 'resolved' && market.resolvedOutcome === r.outcome - 1;
   });
@@ -123,7 +123,7 @@ export default function LightningHistory({ }: LightningHistoryProps) {
         <EmptyState
           icon={<ClockIcon className="w-8 h-8 text-gray-600" />}
           title="No history yet"
-          description="Resolved lightning rounds will appear here"
+          description="Resolved eclipse rounds will appear here"
         />
       </Card>
     );
@@ -309,3 +309,4 @@ export default function LightningHistory({ }: LightningHistoryProps) {
     </div>
   );
 }
+

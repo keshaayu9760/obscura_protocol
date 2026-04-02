@@ -1,21 +1,27 @@
 // ============================================================================
-// VEIL STRIKE v6 SD — USAD Stablecoin Prediction Market Module
+// OBSCURA PROTOCOL v2.0 SD — USAD Stablecoin Prediction Market Module
 // ============================================================================
-// USAD-native markets with full FPMM AMM, dispute system, lightning rounds.
-// Companion to veil_strike_v6.aleo (ALEO main + governance).
+// USAD-native markets with full FPMM AMM, dispute system, and Eclipse rounds.
+// Companion to obscura_v2.0.aleo (ALEO main + governance).
+//
+// v2.0 UPGRADES:
+//   - withdraw_protocol_fees: Extract accumulated protocol fees
+//   - oracle_settle: Automated price-based market resolution
+//   - register_event_oracle: Configure oracle parameters
+//   - authorize_resolver: Add/remove approved resolvers
 //
 // PRIVACY MODEL:
 //   - Buy: transfer_private_to_public hides sender identity
 //   - Sell/Redeem/Refund: transfer_public_to_private hides recipient
 //   - Dispute bonds use ALEO credits for universal compatibility
 //
-// 15 transitions
+// 21 transitions
 // ============================================================================
 
 import credits.aleo;
 import test_usad_stablecoin.aleo;
 
-program veil_strike_v6_sd.aleo {
+program obscura_v2.0_sd.aleo {
 
     // ========================================================================
     // CONSTANTS
@@ -39,6 +45,12 @@ program veil_strike_v6_sd.aleo {
     const MIN_TRADE_AMOUNT: u128 = 10_000u128;
     const MIN_LIQUIDITY: u128 = 1_000_000u128;
     const MIN_DISPUTE_BOND: u128 = 5_000_000u128;
+    const PAUSE_KEY: u8 = 0u8;
+    
+    // v2.0 Oracle constants
+    const COMPARE_ABOVE: u8 = 1u8;
+    const COMPARE_BELOW: u8 = 2u8;
+    const COMPARE_BETWEEN: u8 = 3u8;
 
     // ========================================================================
     // RECORDS
@@ -144,6 +156,15 @@ program veil_strike_v6_sd.aleo {
         dispute_nonce: field,
     }
 
+    // v2.0 Oracle configuration
+    struct OracleConfig {
+        market_id: field,
+        price_feed_id: field,
+        threshold: u128,
+        comparison: u8,
+        threshold_high: u128,
+    }
+
     // ========================================================================
     // MAPPINGS
     // ========================================================================
@@ -157,6 +178,11 @@ program veil_strike_v6_sd.aleo {
     mapping program_credits: u8 => u128;
     mapping market_credits: field => u128;
     mapping lp_positions: field => bool;
+    mapping protocol_paused: u8 => bool;
+    mapping market_dossiers: field => field;
+    // v2.0 mappings
+    mapping oracle_configs: field => OracleConfig;
+    mapping approved_resolvers: address => bool;
 
     @noupgrade
     async constructor() {}
@@ -179,6 +205,8 @@ program veil_strike_v6_sd.aleo {
     ) -> (field, LPToken, test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(num_outcomes >= 2u8 && num_outcomes <= 4u8);
         assert(initial_liquidity >= MIN_LIQUIDITY);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let market_id: field = BHP256::hash_to_field(
             MarketSeed { creator: self.signer, question_hash: question_hash, nonce: nonce }
@@ -251,6 +279,8 @@ program veil_strike_v6_sd.aleo {
     ) -> (OutcomeShare, test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(outcome >= 1u8 && outcome <= 4u8);
         assert(amount_in >= MIN_TRADE_AMOUNT);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let share: OutcomeShare = OutcomeShare {
             owner: self.signer, market_id: market_id, outcome: outcome,
@@ -342,6 +372,8 @@ program veil_strike_v6_sd.aleo {
         assert(tokens_desired >= MIN_TRADE_AMOUNT);
         assert(max_shares_used > 0u128);
         assert(max_shares_used <= shares.quantity);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let protocol_fee: u128 = (tokens_desired * PROTOCOL_FEE_BPS) / FEE_DENOMINATOR;
         let creator_fee: u128 = (tokens_desired * CREATOR_FEE_BPS) / FEE_DENOMINATOR;
@@ -463,6 +495,8 @@ program veil_strike_v6_sd.aleo {
         private proofs: [MerkleProof; 2],
     ) -> (LPToken, test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(amount >= MIN_LIQUIDITY);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
         let lp_token: LPToken = LPToken {
             owner: self.signer, market_id: market_id, lp_shares: expected_lp_shares,
             lp_nonce: lp_nonce, token_type: TOKEN_USAD,
@@ -623,7 +657,7 @@ program veil_strike_v6_sd.aleo {
     }
 
     // ========================================================================
-    // 9. LIGHTNING SETTLE
+    // 9. ECLIPSE SETTLE
     // ========================================================================
 
     async transition flash_settle(public market_id: field, public winning_outcome: u8) -> Future {
@@ -906,4 +940,192 @@ program veil_strike_v6_sd.aleo {
         assert(current_held >= expected_amount);
         program_credits.set(token_type, current_held - expected_amount);
     }
+
+    // ========================================================================
+    // 16. SET PROTOCOL PAUSE (USAD)
+    // ========================================================================
+
+    async transition set_protocol_pause(public paused: bool) -> Future {
+        return set_protocol_pause_finalize(self.signer, paused);
+    }
+
+    async function set_protocol_pause_finalize(caller: address, paused: bool) {
+        assert(caller == DEPLOYER);
+        protocol_paused.set(PAUSE_KEY, paused);
+    }
+
+    // ========================================================================
+    // 17. PIN MARKET DOSSIER (USAD)
+    // ========================================================================
+
+    async transition pin_market_dossier(public market_id: field, public dossier_hash: field) -> Future {
+        return pin_market_dossier_finalize(market_id, dossier_hash, self.signer);
+    }
+
+    async function pin_market_dossier_finalize(market_id: field, dossier_hash: field, caller: address) {
+        let market: Market = markets.get(market_id);
+        assert(caller == market.creator || caller == market.resolver || caller == DEPLOYER);
+        market_dossiers.set(market_id, dossier_hash);
+    }
+
+    // ========================================================================
+    // 18. WITHDRAW PROTOCOL FEES (v2.0 - REVENUE FIX)
+    // ========================================================================
+
+    async transition withdraw_protocol_fees(
+        public market_id: field,
+        public amount: u128
+    ) -> Future {
+        assert(amount > 0u128);
+        let transfer_future: Future = test_usad_stablecoin.aleo/transfer_public(self.signer, amount);
+        return withdraw_protocol_fees_finalize(transfer_future, market_id, self.signer, amount);
+    }
+
+    async function withdraw_protocol_fees_finalize(
+        transfer_future: Future,
+        market_id: field,
+        caller: address,
+        amount: u128
+    ) {
+        transfer_future.await();
+        assert(caller == DEPLOYER);
+        let fees: MarketFees = market_fees.get(market_id);
+        assert(fees.protocol_fees >= amount);
+        market_fees.set(market_id, MarketFees {
+            market_id: market_id,
+            protocol_fees: fees.protocol_fees - amount,
+            creator_fees: fees.creator_fees,
+        });
+        let market: Market = markets.get(market_id);
+        let token_type: u8 = market.token_type;
+        let current_held: u128 = program_credits.get_or_use(token_type, 0u128);
+        assert(current_held >= amount);
+        program_credits.set(token_type, current_held - amount);
+    }
+
+    // ========================================================================
+    // 19. ORACLE SETTLE (v2.0 - AUTOMATED RESOLUTION)
+    // ========================================================================
+
+    async transition oracle_settle(
+        public market_id: field,
+        public oracle_price: u128,
+        public price_timestamp: u32,
+        public price_feed_id: field
+    ) -> Future {
+        return oracle_settle_finalize(market_id, oracle_price, price_timestamp, price_feed_id, self.signer);
+    }
+
+    async function oracle_settle_finalize(
+        market_id: field,
+        oracle_price: u128,
+        price_timestamp: u32,
+        price_feed_id: field,
+        caller: address
+    ) {
+        let is_approved: bool = approved_resolvers.get_or_use(caller, false);
+        let is_deployer: bool = caller == DEPLOYER;
+        assert(is_approved || is_deployer);
+        
+        let market: Market = markets.get(market_id);
+        let is_active: bool = market.status == STATUS_ACTIVE;
+        let is_closed: bool = market.status == STATUS_CLOSED;
+        assert(is_active || is_closed);
+        
+        let config: OracleConfig = oracle_configs.get(market_id);
+        assert(config.price_feed_id == price_feed_id);
+        
+        let winning_outcome: u8 = 2u8;
+        
+        if (config.comparison == COMPARE_ABOVE) {
+            winning_outcome = oracle_price > config.threshold ? 1u8 : 2u8;
+        }
+        if (config.comparison == COMPARE_BELOW) {
+            winning_outcome = oracle_price < config.threshold ? 1u8 : 2u8;
+        }
+        if (config.comparison == COMPARE_BETWEEN) {
+            let above_low: bool = oracle_price >= config.threshold;
+            let below_high: bool = oracle_price <= config.threshold_high;
+            winning_outcome = (above_low && below_high) ? 1u8 : 2u8;
+        }
+        
+        let current_height: u32 = block.height;
+        
+        market_resolutions.set(market_id, MarketResolution {
+            market_id: market_id,
+            winning_outcome: winning_outcome,
+            resolved_at: current_height,
+            challenge_deadline: current_height,
+            finalized: true,
+        });
+        
+        markets.set(market_id, Market {
+            id: market.id,
+            creator: market.creator,
+            resolver: market.resolver,
+            question_hash: market.question_hash,
+            category: market.category,
+            num_outcomes: market.num_outcomes,
+            deadline: market.deadline,
+            resolution_deadline: market.resolution_deadline,
+            status: STATUS_RESOLVED,
+            created_at: market.created_at,
+            token_type: market.token_type,
+        });
+    }
+
+    // ========================================================================
+    // 20. REGISTER EVENT ORACLE (v2.0 - ORACLE CONFIG)
+    // ========================================================================
+
+    async transition register_event_oracle(
+        public market_id: field,
+        public price_feed_id: field,
+        public threshold: u128,
+        public comparison: u8,
+        public threshold_high: u128
+    ) -> Future {
+        return register_event_oracle_finalize(market_id, price_feed_id, threshold, comparison, threshold_high, self.signer);
+    }
+
+    async function register_event_oracle_finalize(
+        market_id: field,
+        price_feed_id: field,
+        threshold: u128,
+        comparison: u8,
+        threshold_high: u128,
+        caller: address
+    ) {
+        let market: Market = markets.get(market_id);
+        let is_creator: bool = caller == market.creator;
+        let is_resolver: bool = caller == market.resolver;
+        let is_deployer: bool = caller == DEPLOYER;
+        assert(is_creator || is_resolver || is_deployer);
+        assert(market.status == STATUS_ACTIVE);
+        assert(comparison >= COMPARE_ABOVE && comparison <= COMPARE_BETWEEN);
+        if (comparison == COMPARE_BETWEEN) {
+            assert(threshold_high > threshold);
+        }
+        oracle_configs.set(market_id, OracleConfig {
+            market_id: market_id,
+            price_feed_id: price_feed_id,
+            threshold: threshold,
+            comparison: comparison,
+            threshold_high: threshold_high,
+        });
+    }
+
+    // ========================================================================
+    // 21. AUTHORIZE RESOLVER (v2.0 - RESOLVER MANAGEMENT)
+    // ========================================================================
+
+    async transition authorize_resolver(public resolver: address, public enabled: bool) -> Future {
+        return authorize_resolver_finalize(self.signer, resolver, enabled);
+    }
+
+    async function authorize_resolver_finalize(caller: address, resolver: address, enabled: bool) {
+        assert(caller == DEPLOYER);
+        approved_resolvers.set(resolver, enabled);
+    }
 }
+

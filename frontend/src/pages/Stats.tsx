@@ -26,14 +26,14 @@ export default function Stats() {
     acc[m.category] = (acc[m.category] || 0) + 1;
     return acc;
   }, {});
-  const lightningCount = markets.filter(m => m.isLightning).length;
-  const eventCount = markets.length - lightningCount;
+  const eclipseCount = markets.filter(m => m.isEclipse).length;
+  const eventCount = markets.length - eclipseCount;
 
   return (
     <div>
       <PageHeader
-        title="Protocol Stats"
-        subtitle="Real-time analytics for the Veil Strike protocol"
+        title="Atlas"
+        subtitle="Throughput, liquidity, fee pressure, and market distribution across the protocol surface."
       />
 
       <div className="space-y-6 mt-6">
@@ -71,8 +71,8 @@ export default function Stats() {
                 <span className="font-mono text-gray-300">{eventCount}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Lightning Markets</span>
-                <span className="font-mono text-amber-400">{lightningCount}</span>
+                <span className="text-gray-500">Eclipse Markets</span>
+                <span className="font-mono text-amber-400">{eclipseCount}</span>
               </div>
               <div className="h-px bg-dark-400/30 my-2" />
               {Object.entries(categoryCount).map(([cat, count]) => (
@@ -88,3 +88,4 @@ export default function Stats() {
     </div>
   );
 }
+

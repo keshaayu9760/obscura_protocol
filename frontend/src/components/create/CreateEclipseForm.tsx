@@ -4,7 +4,7 @@ import { buildCreateMarketTx, buildCreateMarketStableTx, generateNonce } from '@
 import { registerMarketFromTx } from '@/utils/marketRegistration';
 import { getUsdcxProofs } from '@/utils/freezeListProof';
 import { parseAleoInput } from '@/utils/format';
-import { STRIKE_ROUND_DURATIONS, ALEO_TESTNET_API } from '@/constants';
+import { ECLIPSE_SESSION_OPTIONS, ALEO_TESTNET_API } from '@/constants';
 import { useWalletStore } from '@/stores/walletStore';
 import { useMarketStore } from '@/stores/marketStore';
 import Button from '@/components/shared/Button';
@@ -12,15 +12,15 @@ import Card from '@/components/shared/Card';
 import CryptoIcon from '@/components/shared/CryptoIcon';
 import { BoltIcon } from '@/components/icons';
 
-interface CreateLightningFormProps {
+interface CreateEclipseFormProps {
   onSuccess?: () => void;
 }
 
-export default function CreateLightningForm({ onSuccess }: CreateLightningFormProps) {
-  const [asset, setAsset] = useState<'btc' | 'eth' | 'aleo'>('btc');
-  const [duration, setDuration] = useState<typeof STRIKE_ROUND_DURATIONS[number]>(STRIKE_ROUND_DURATIONS[0]);
-  const [initialLiquidity, setInitialLiquidity] = useState('5');
-  const [tokenType, setTokenType] = useState<'ALEO' | 'USDCX' | 'USAD'>('ALEO');
+export default function CreateEclipseForm({ onSuccess }: CreateEclipseFormProps) {
+  const [selectedAsset, setSelectedAsset] = useState<'btc' | 'eth' | 'aleo'>('btc');
+  const [selectedWindow, setSelectedWindow] = useState<typeof ECLIPSE_SESSION_OPTIONS[number]>(ECLIPSE_SESSION_OPTIONS[0]);
+  const [seedLiquidityInput, setSeedLiquidityInput] = useState('5');
+  const [settlementToken, setSettlementToken] = useState<'ALEO' | 'USDCX' | 'USAD'>('ALEO');
   const { status, execute, fetchUsdcxRecord } = useTransaction();
   const walletAddress = useWalletStore((s) => s.address);
   const fetchMarkets = useMarketStore((s) => s.fetchMarkets);
@@ -44,11 +44,8 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
     eth: 'Ethereum (ETH)',
     aleo: 'Aleo (ALEO)',
   };
-
-  const assetIndex: Record<string, number> = { btc: 0, eth: 1, aleo: 2 };
-
   const handleCreate = async () => {
-    const liquidityMicro = parseAleoInput(initialLiquidity);
+    const liquidityMicro = parseAleoInput(seedLiquidityInput);
     if (liquidityMicro < 1_000_000) return;
 
     // Fetch latest block height if not already loaded
@@ -66,19 +63,19 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
     if (!block) return; // can't create without real block height
 
     const nonce = generateNonce();
-    const question = `${asset.toUpperCase()} ${duration.label} Strike Round`;
+    const question = `${selectedAsset.toUpperCase()} ${selectedWindow.label} Eclipse Round`;
     const questionHash = `${BigInt(Array.from(new TextEncoder().encode(question)).reduce((h, b) => h * 31n + BigInt(b), 0n)) % BigInt('0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001')}field`;
-    const deadline = `${block + duration.blocks}u32`;
-    const resolutionDeadline = `${block + duration.blocks + 2880}u32`;
+    const deadline = `${block + selectedWindow.blocks}u32`;
+    const resolutionDeadline = `${block + selectedWindow.blocks + 2880}u32`;
     const resolver = walletAddress || '';
 
     let tx;
-    if (tokenType === 'USDCX' || tokenType === 'USAD') {
-      const tokenRecord = await fetchUsdcxRecord(liquidityMicro, tokenType);
+    if (settlementToken === 'USDCX' || settlementToken === 'USAD') {
+      const tokenRecord = await fetchUsdcxRecord(liquidityMicro, settlementToken);
       if (!tokenRecord) return;
-      const proofs = await getUsdcxProofs(tokenType);
+      const proofs = await getUsdcxProofs(settlementToken);
       tx = buildCreateMarketStableTx(
-        tokenType, questionHash, 1, 2, deadline, resolutionDeadline, resolver,
+        settlementToken, questionHash, 1, 2, deadline, resolutionDeadline, resolver,
         `${liquidityMicro}u128`, nonce, tokenRecord, proofs
       );
     } else {
@@ -94,8 +91,8 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
         questionText: question,
         questionHash,
         outcomeLabels: ['Up', 'Down'],
-        isLightning: true,
-        tokenType,
+        isEclipse: true,
+        tokenType: settlementToken,
         onRegistered: fetchMarkets,
       });
       onSuccess?.();
@@ -113,9 +110,9 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
           {(['btc', 'eth', 'aleo'] as const).map((a) => (
             <button
               key={a}
-              onClick={() => setAsset(a)}
+              onClick={() => setSelectedAsset(a)}
               className={`flex items-center justify-center gap-2 py-3 text-sm font-heading rounded-lg transition-all ${
-                asset === a
+                selectedAsset === a
                   ? 'bg-gradient-to-b from-amber-400/20 to-amber-400/10 text-amber-400 shadow-[0_0_12px_-3px_rgba(251,191,36,0.3)]'
                   : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
               }`}
@@ -130,10 +127,10 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
       <Card className="p-4 border-amber-400/10">
         <div className="flex items-center gap-2 mb-2">
           <BoltIcon className="w-4 h-4 text-amber-400" />
-          <span className="text-xs text-amber-400 font-heading">Strike Round</span>
+          <span className="text-xs text-amber-400 font-heading">Eclipse Round</span>
         </div>
         <p className="text-sm text-white font-heading">
-          Will {assetLabels[asset]} price go UP or DOWN in {duration.label}?
+          Will {assetLabels[selectedAsset]} price go UP or DOWN in {selectedWindow.label}?
         </p>
       </Card>
 
@@ -146,9 +143,9 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
           {(['ALEO', 'USDCX', 'USAD'] as const).map((t) => (
             <button
               key={t}
-              onClick={() => setTokenType(t)}
+              onClick={() => setSettlementToken(t)}
               className={`flex items-center gap-1.5 px-4 py-2 text-xs rounded-lg font-heading font-medium transition-all ${
-                tokenType === t
+                settlementToken === t
                   ? 'bg-gradient-to-b from-amber-400/20 to-amber-400/10 text-amber-400 shadow-[0_0_12px_-3px_rgba(251,191,36,0.3)]'
                   : 'text-gray-500 hover:text-gray-300 hover:bg-white/[0.03]'
               }`}
@@ -165,12 +162,12 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
           Duration
         </label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          {STRIKE_ROUND_DURATIONS.map((d) => (
+          {ECLIPSE_SESSION_OPTIONS.map((d) => (
             <button
               key={d.seconds}
-              onClick={() => setDuration(d)}
+              onClick={() => setSelectedWindow(d)}
               className={`py-2.5 text-sm rounded-lg border transition-all ${
-                duration.seconds === d.seconds
+                selectedWindow.seconds === d.seconds
                   ? 'border-amber-400/40 bg-amber-400/10 text-amber-400'
                   : 'border-dark-400/50 text-gray-500 hover:text-gray-300'
               }`}
@@ -184,12 +181,12 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
       {/* Liquidity */}
       <div>
         <label className="text-xs text-gray-500 uppercase tracking-wider font-heading mb-1.5 block">
-          Initial Liquidity ({tokenType})
+          Initial Liquidity ({settlementToken})
         </label>
         <input
           type="number"
-          value={initialLiquidity}
-          onChange={(e) => setInitialLiquidity(e.target.value)}
+          value={seedLiquidityInput}
+          onChange={(e) => setSeedLiquidityInput(e.target.value)}
           placeholder="5"
           min="1"
           className="input-field"
@@ -201,13 +198,14 @@ export default function CreateLightningForm({ onSuccess }: CreateLightningFormPr
         className="w-full"
         size="lg"
         loading={status === 'proving' || status === 'broadcasting'}
-        disabled={parseAleoInput(initialLiquidity) < 1_000_000}
+        disabled={parseAleoInput(seedLiquidityInput) < 1_000_000}
         onClick={handleCreate}
       >
         {status === 'proving' ? 'Generating ZK Proof...' :
          status === 'broadcasting' ? 'Broadcasting...' :
-         '⚡ Create Strike Round'}
+         '⚡ Create Eclipse Round'}
       </Button>
     </div>
   );
 }
+

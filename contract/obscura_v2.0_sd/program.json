@@ -1,0 +1,18 @@
+{
+    "program": "obscura_v2.0_sd.aleo",
+    "version": "2.0.0",
+    "description": "Obscura Protocol v2.0 SD — USAD stablecoin prediction market module with oracle integration",
+    "license": "MIT",
+    "dependencies": [
+        {
+            "name": "credits.aleo",
+            "location": "network",
+            "network": "testnet"
+        },
+        {
+            "name": "test_usad_stablecoin.aleo",
+            "location": "network",
+            "network": "testnet"
+        }
+    ]
+}

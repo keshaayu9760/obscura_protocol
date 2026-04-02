@@ -1,5 +1,5 @@
 #!/bin/bash
-# Veil Strike - Oracle Price Update
+# Obscura Protocol - Oracle Price Update
 # Manually updates oracle prices on-chain (admin only)
 set -euo pipefail
 
@@ -30,7 +30,7 @@ echo "ALEO: \$$ALEO ($ALEO_MICRO micro)"
 
 echo "Updating oracle prices on-chain..."
 snarkos developer execute \
-  veil_strike_v4.aleo \
+  obscura_protocol_v7.aleo \
   update_oracle_prices \
   "${BTC_MICRO}u64" \
   "${ETH_MICRO}u64" \

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Veil Strike provides **partial privacy** for prediction market traders on Aleo. The protocol uses Aleo's record system to keep position ownership private, while market mechanics remain transparent for fair pricing.
+Obscura Protocol provides **partial privacy** for prediction market traders on Aleo. The protocol uses Aleo's record system to keep position ownership private, while market mechanics remain transparent for fair pricing.
 
 ## What IS Private
 
@@ -66,7 +66,7 @@ By design, these are public for fair pricing:
 
 ## Privacy Comparison
 
-| Privacy Aspect | Veil Strike | Polymarket | Augur |
+| Privacy Aspect | Obscura Protocol | Polymarket | Augur |
 |---|---|---|---|
 | Position Records | ✅ Private (encrypted records) | ❌ Public ERC-1155 | ❌ Public |
 | Payout Privacy | ✅ Private (transfer_public_to_private) | ❌ Public | ❌ Public |
@@ -85,7 +85,7 @@ To achieve full privacy, the contract would need:
 
 ## Summary
 
-Veil Strike is **more private than any EVM prediction market** (Polymarket, Augur, etc.) because:
+Obscura Protocol is **more private than any EVM prediction market** (Polymarket, Augur, etc.) because:
 - Your share positions are encrypted records — only you can see your portfolio
 - Your payouts go to private records — nobody sees who won
 - Your address is pseudonymous

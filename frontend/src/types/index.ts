@@ -1,5 +1,5 @@
 // ============================================================================
-// Veil Strike — Core TypeScript types
+// Obscura Protocol — Core TypeScript types
 // ============================================================================
 
 export interface Market {
@@ -14,7 +14,7 @@ export interface Market {
   status: 'active' | 'closed' | 'resolved' | 'cancelled' | 'pending_resolution';
   endTime: number;
   createdAt: number;
-  isLightning: boolean;
+  isEclipse: boolean;
   resolvedOutcome?: number;
   tokenType?: string;
   imageUrl?: string;
@@ -124,6 +124,7 @@ export type MarketCategory =
   | 'Entertainment'
   | 'Other';
 
-export type LightningDuration = '5min' | '15min' | '1hr' | '4hr';
+export type ECLIPSEDuration = '5min' | '15min' | '1hr' | '4hr';
 
 export type MarketSortBy = 'volume' | 'liquidity' | 'newest' | 'ending';
+

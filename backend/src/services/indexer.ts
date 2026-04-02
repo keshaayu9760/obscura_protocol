@@ -10,7 +10,7 @@ export interface MarketMeta {
   questionHash: string;
   question: string;
   outcomes: string[];
-  isLightning: boolean;
+  isEclipse: boolean;
   tokenType?: 'ALEO' | 'USDCX' | 'USAD';
   imageUrl?: string;
   botEndTime?: number; // Wall-clock ms timestamp for round-bot markets
@@ -45,7 +45,7 @@ function saveDynamicRegistry(registry: Record<string, MarketMeta>): void {
 }
 
 // Registry of known market IDs with their off-chain metadata
-// v6: Seed registry is empty — all markets are discovered dynamically via scanner
+// v7: Seed registry is empty — all markets are discovered dynamically via scanner
 // or registered via POST /api/markets/register. Legacy v5 seeds removed.
 const SEED_REGISTRY: Record<string, MarketMeta> = {};
 
@@ -261,7 +261,7 @@ export async function fetchMarketsFromChain(): Promise<MarketInfo[]> {
         status: STATUS_MAP[market.status] || 'active',
         endTime: meta.botEndTime || blockHeightToTimestamp(market.deadline, currentBlock),
         createdAt: blockHeightToCreatedTimestamp(market.created_at, currentBlock),
-        isLightning: meta.isLightning,
+        isEclipse: meta.isEclipse,
         tokenType: TOKEN_TYPE_MAP[tokenType] || 'ALEO',
         resolvedOutcome,
         imageUrl: meta.imageUrl,
@@ -287,7 +287,7 @@ export function registerMarket(marketId: string, meta: MarketMeta): boolean {
   const existing = MARKET_REGISTRY[marketId];
   if (existing) {
     // Allow updating placeholder entries (scanner discovers first with generic data,
-    // then frontend POST /register arrives with real question/isLightning/tokenType)
+    // then frontend POST /register arrives with real question/isEclipse/tokenType)
     const isPlaceholder = existing.question.startsWith('Market ') && existing.question.includes('...');
     if (isPlaceholder && meta.question && !meta.question.startsWith('Market ')) {
       Object.assign(existing, meta);
@@ -324,29 +324,30 @@ export function updateMarketMeta(marketId: string, partial: Partial<MarketMeta>)
 }
 
 /**
- * Clear isLightning only on markets that are resolved/cancelled in the cache,
+ * Clear isEclipse only on markets that are resolved/cancelled in the cache,
  * or whose botEndTime is more than 60 minutes in the past (orphaned rounds).
  * This prevents wiping flags on markets that are still active and tradable.
  */
-export function clearStaleLightningFlags(): number {
+export function clearStaleEclipseFlags(): number {
   const now = Date.now();
   const STALE_THRESHOLD = 60 * 60 * 1000; // 60 min
   let count = 0;
   for (const [id, meta] of Object.entries(MARKET_REGISTRY)) {
-    if (!meta.isLightning) continue;
+    if (!meta.isEclipse) continue;
     // Clear resolved / cancelled markets
     const cached = marketsCache.find((m) => m.id === id);
     if (cached && (cached.status === 'resolved' || cached.status === 'cancelled')) {
-      meta.isLightning = false;
+      meta.isEclipse = false;
       count++;
       continue;
     }
     // Clear orphaned rounds whose endTime is long past
     if (meta.botEndTime && meta.botEndTime < now - STALE_THRESHOLD) {
-      meta.isLightning = false;
+      meta.isEclipse = false;
       count++;
     }
   }
   if (count > 0) persistRegistry();
   return count;
 }
+

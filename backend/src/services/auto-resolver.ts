@@ -1,5 +1,5 @@
 // Auto-resolver: watches markets and executes seal → judge → confirm on-chain
-// Handles event markets only. Lightning markets are settled by lightning-manager.
+// Handles event markets only. ECLIPSE markets are settled by eclipse-manager.
 
 import { config } from '../config';
 import { getCachedMarkets, fetchMarketsFromChain, setCachedMarkets } from './indexer';
@@ -23,7 +23,7 @@ const pendingFinalize = new Set<string>();
 const failedCooldown = new Map<string, number>();
 const COOLDOWN_MS = 10 * 60 * 1000; // 10 min cooldown after failure
 
-// Lightning market question → asset mapping
+// ECLIPSE market question → asset mapping
 function assetFromQuestion(question: string): 'BTC' | 'ETH' | 'ALEO' | null {
   const q = question.toUpperCase();
   if (q.includes('BTC') || q.includes('BITCOIN')) return 'BTC';
@@ -33,10 +33,10 @@ function assetFromQuestion(question: string): 'BTC' | 'ETH' | 'ALEO' | null {
 }
 
 /**
- * Determine winning outcome for a lightning market based on price direction
+ * Determine winning outcome for a ECLIPSE market based on price direction
  * Returns 1 (UP wins) or 2 (DOWN wins) — contract uses 1-based outcomes
  */
-function determineLightningWinner(asset: 'BTC' | 'ETH' | 'ALEO'): number {
+function determineECLIPSEWinner(asset: 'BTC' | 'ETH' | 'ALEO'): number {
   const prices = getCachedPrices();
   const key = asset.toLowerCase() as 'btc' | 'eth' | 'aleo';
   // For now, use current price trend. In practice, compare start vs end price.
@@ -115,11 +115,11 @@ export async function autoResolveMarkets(): Promise<void> {
     const id = market.id;
     if (isOnCooldown(id)) continue;
 
-    // Skip lightning markets — they use settle_round via lightning-manager / round-bot
-    if (market.isLightning) continue;
+    // Skip ECLIPSE markets — they use settle_round via eclipse-manager / round-bot
+    if (market.isEclipse) continue;
 
     // Skip bot-created strike round markets — handled by round-bot via flash_settle
-    if (market.question.includes('Strike Round')) continue;
+    if (market.question.includes('Eclipse Round')) continue;
 
     // Skip markets with very short deadlines (< 3 hours) that look like bot-created
     // round markets whose metadata was lost on redeploy.  Regular event markets
@@ -225,3 +225,4 @@ export async function autoResolveMarkets(): Promise<void> {
     setCachedMarkets(updated);
   } catch {}
 }
+

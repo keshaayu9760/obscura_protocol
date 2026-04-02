@@ -1,10 +1,10 @@
 // ============================================================================
-// Veil Strike — Application constants
+// Obscura Protocol — Application constants
 // ============================================================================
 
-export const PROGRAM_ID = 'veil_strike_v6.aleo';
-export const PROGRAM_ID_CX = 'veil_strike_v6_cx.aleo';
-export const PROGRAM_ID_SD = 'veil_strike_v6_sd.aleo';
+export const PROGRAM_ID = 'obscura_v2.0.aleo';
+export const PROGRAM_ID_CX = 'obscura_v2.0_cx.aleo';
+export const PROGRAM_ID_SD = 'obscura_v2.0_sd.aleo';
 
 export const ALEO_TESTNET_API = 'https://api.explorer.provable.com/v1/testnet';
 
@@ -62,7 +62,7 @@ export const TOKEN_TYPES: Record<number, string> = {
   2: 'USAD',
 };
 
-export const STRIKE_ROUND_DURATIONS = [
+export const ECLIPSE_SESSION_OPTIONS = [
   { label: '24 Hours', seconds: 86400, blocks: 5760 },
   { label: '2 Days', seconds: 172800, blocks: 11520 },
   { label: '7 Days', seconds: 604800, blocks: 40320 },
@@ -80,13 +80,13 @@ export const CATEGORIES: string[] = [
 ];
 
 export const CHART_COLORS = {
-  teal: '#00D4B8',
-  green: '#22C55E',
-  red: '#EF4444',
-  gray: '#6B7280',
-  darkBg: '#06080F',
-  cardBg: '#111822',
-  borderColor: '#1C2333',
+  teal: '#34C9E1',
+  green: '#7DDF96',
+  red: '#F66E7A',
+  gray: '#90A0B2',
+  darkBg: '#05080D',
+  cardBg: '#111823',
+  borderColor: '#223042',
 } as const;
 
 export const TRANSITIONS = {
@@ -107,4 +107,9 @@ export const TRANSITIONS = {
   SETTLE_ROUND: 'flash_settle',
   SUBMIT_PROPOSAL: 'submit_proposal',
   CAST_VOTE: 'cast_vote',
+  // v2.0 new transitions
+  WITHDRAW_PROTOCOL_FEES: 'withdraw_protocol_fees',
+  EXECUTE_PROPOSAL: 'execute_proposal',
+  ORACLE_SETTLE: 'oracle_settle',
+  REGISTER_EVENT_ORACLE: 'register_event_oracle',
 } as const;

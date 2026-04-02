@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export interface LightningBet {
+export interface EclipseBet {
   roundId: string;
   marketId?: string; // Per-round on-chain market ID
   asset: 'BTC' | 'ETH' | 'ALEO';
@@ -18,16 +18,16 @@ export interface LightningBet {
   payout?: number; // potential payout in microcredits
 }
 
-interface LightningBetState {
-  bets: LightningBet[];
-  addBet: (bet: LightningBet) => void;
+interface EclipseBetState {
+  bets: EclipseBet[];
+  addBet: (bet: EclipseBet) => void;
   resolveBets: (roundId: string, result: 'up' | 'down', endPrice: number) => void;
   expireStaleBets: (maxAgeMs: number) => void;
-  getBetsForRound: (roundId: string) => LightningBet[];
-  getRecentBets: (limit?: number) => LightningBet[];
+  getBetsForRound: (roundId: string) => EclipseBet[];
+  getRecentBets: (limit?: number) => EclipseBet[];
 }
 
-export const useLightningBetStore = create<LightningBetState>()(
+export const useEclipseBetStore = create<EclipseBetState>()(
   persist(
     (set, get) => ({
       bets: [],
@@ -68,6 +68,8 @@ export const useLightningBetStore = create<LightningBetState>()(
         return get().bets.slice(0, limit);
       },
     }),
-    { name: 'veil-lightning-bets' }
+    { name: 'obscura-eclipse-bets' }
   )
 );
+
+

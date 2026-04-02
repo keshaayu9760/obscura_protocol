@@ -225,8 +225,8 @@ export default function Governance() {
   return (
     <div>
       <PageHeader
-        title="Governance"
-        subtitle="Submit proposals and vote to shape the protocol"
+        title="Council"
+        subtitle="Route resolver, treasury, and market-control decisions through on-chain voting."
       />
 
       {/* Stats */}

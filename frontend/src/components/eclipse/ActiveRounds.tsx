@@ -14,7 +14,7 @@ import { formatUSD, formatAleo } from '@/utils/format';
 import { useMarketStore } from '@/stores/marketStore';
 import { useOracleStore } from '@/stores/oracleStore';
 import { useTradeStore } from '@/stores/tradeStore';
-import { useLightningBetStore } from '@/stores/lightningBetStore';
+import { useEclipseBetStore } from '@/stores/eclipseBetStore';
 import { useBetCooldownStore } from '@/stores/betCooldownStore';
 import { API_BASE } from '@/constants';
 import type { Market } from '@/types';
@@ -50,7 +50,7 @@ function useCountdownSeconds(targetTime: number) {
   return seconds;
 }
 
-function StrikeRoundCard({ market, shareRecords, onClaimed }: { market: Market; shareRecords: ShareRecord[]; onClaimed: () => void }) {
+function EclipseRoundCard({ market, shareRecords, onClaimed }: { market: Market; shareRecords: ShareRecord[]; onClaimed: () => void }) {
   const asset = detectAsset(market.question);
   const durationLabel = detectDuration(market.question);
   const secondsLeft = useCountdownSeconds(market.endTime);
@@ -76,8 +76,8 @@ function StrikeRoundCard({ market, shareRecords, onClaimed }: { market: Market; 
   const fetchMarkets = useMarketStore((s) => s.fetchMarkets);
   const oraclePrices = useOracleStore((s) => s.prices);
   const addTrade = useTradeStore((s) => s.addTrade);
-  const addBet = useLightningBetStore((s) => s.addBet);
-  const allBets = useLightningBetStore((s) => s.bets);
+  const addBet = useEclipseBetStore((s) => s.addBet);
+  const allBets = useEclipseBetStore((s) => s.bets);
   const roundBets = allBets.filter((b) => b.marketId === market.id);
 
   // Bet cooldown — prevents UTXO reuse errors when betting rapidly across markets
@@ -459,10 +459,10 @@ export default function ActiveRounds({ }: ActiveRoundsProps) {
     return () => { clearInterval(marketId); clearInterval(shareId); };
   }, [fetchMarkets, loadShareRecords]);
 
-  // Filter to only lightning/strike-round markets
-  const strikeMarkets = allMarkets.filter((m) => m.isLightning && m.question.toLowerCase().includes('strike round'));
-  const activeMarkets = strikeMarkets.filter((m) => m.status === 'active');
-  const resolvedMarkets = strikeMarkets.filter((m) => m.status === 'resolved').slice(0, 6);
+  // Filter to only Eclipse-round markets
+  const eclipseMarkets = allMarkets.filter((m) => m.isEclipse);
+  const activeMarkets = eclipseMarkets.filter((m) => m.status === 'active');
+  const resolvedMarkets = eclipseMarkets.filter((m) => m.status === 'resolved').slice(0, 6);
 
   if (loading) {
     return <div className="text-center text-gray-500 py-8">Loading rounds...</div>;
@@ -472,8 +472,8 @@ export default function ActiveRounds({ }: ActiveRoundsProps) {
     return (
       <div className="text-center py-8">
         <BoltIcon className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-        <p className="text-gray-400">No active Strike Rounds</p>
-        <p className="text-xs text-gray-600 mt-1">Create a Strike Round to get started</p>
+        <p className="text-gray-400">No active Eclipse Rounds</p>
+        <p className="text-xs text-gray-600 mt-1">Create an Eclipse Round to get started</p>
       </div>
     );
   }
@@ -484,13 +484,13 @@ export default function ActiveRounds({ }: ActiveRoundsProps) {
         <RefreshButton onRefresh={async () => { await fetchMarkets(); await loadShareRecords(); }} label="Refresh" />
       </div>
 
-      {/* Active Strike Rounds */}
+      {/* Active Eclipse Rounds */}
       {activeMarkets.length > 0 && (
         <div>
           <h3 className="text-xs text-gray-500 uppercase tracking-wider font-heading mb-3">Active Rounds</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeMarkets.map((market) => (
-              <StrikeRoundCard key={market.id} market={market} shareRecords={shareRecords} onClaimed={loadShareRecords} />
+              <EclipseRoundCard key={market.id} market={market} shareRecords={shareRecords} onClaimed={loadShareRecords} />
             ))}
           </div>
         </div>
@@ -502,7 +502,7 @@ export default function ActiveRounds({ }: ActiveRoundsProps) {
           <h3 className="text-xs text-gray-500 uppercase tracking-wider font-heading mb-3">Recently Resolved</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {resolvedMarkets.map((market) => (
-              <StrikeRoundCard key={market.id} market={market} shareRecords={shareRecords} onClaimed={loadShareRecords} />
+              <EclipseRoundCard key={market.id} market={market} shareRecords={shareRecords} onClaimed={loadShareRecords} />
             ))}
           </div>
         </div>
@@ -510,3 +510,4 @@ export default function ActiveRounds({ }: ActiveRoundsProps) {
     </div>
   );
 }
+

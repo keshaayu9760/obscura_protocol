@@ -4,13 +4,13 @@ import Card from '@/components/shared/Card';
 export default function Terms() {
   return (
     <div>
-      <PageHeader title="Terms of Service" subtitle="Last updated: June 2025" />
+      <PageHeader title="Operating Terms" subtitle="Last updated: June 2025" />
       <Card className="p-8 max-w-4xl prose prose-invert prose-sm">
         <div className="space-y-6 text-sm text-gray-400 leading-relaxed">
           <section>
             <h2 className="text-lg font-heading font-semibold text-white mb-3">1. Acceptance of Terms</h2>
             <p>
-              By accessing or using the Veil Strike protocol ("Protocol"), you agree to be bound by these Terms of
+              By accessing or using Obscura Protocol ("Protocol"), you agree to be bound by these Terms of
               Service. If you do not agree, you must not access or use the Protocol. The Protocol is a decentralized
               prediction market built on the Aleo blockchain.
             </p>
@@ -27,7 +27,7 @@ export default function Terms() {
           <section>
             <h2 className="text-lg font-heading font-semibold text-white mb-3">3. Protocol Description</h2>
             <p>
-              Veil Strike is a privacy-preserving prediction market protocol utilizing zero-knowledge proofs on the
+              Obscura Protocol is a privacy-preserving prediction market protocol utilizing zero-knowledge proofs on the
               Aleo blockchain. Users can create markets, provide liquidity, trade outcome shares, and participate in
               governance. All transactions are executed on-chain through smart contracts.
             </p>

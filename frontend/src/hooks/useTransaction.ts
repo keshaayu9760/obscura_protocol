@@ -31,7 +31,7 @@ export function useTransaction() {
   const fetchCreditsRecord = useCallback(
     async (minMicrocredits: number): Promise<string | null> => {
       if (!connected) {
-        addNotification('error', 'Wallet Not Connected', 'Please connect your Shield Wallet first.');
+        addNotification('error', 'Wallet session required', 'Link a wallet before opening a private order.');
         return null;
       }
       try {
@@ -39,7 +39,7 @@ export function useTransaction() {
         console.log('[fetchCreditsRecord] Raw records:', JSON.stringify(records, null, 2));
 
         if (!records || records.length === 0) {
-          addNotification('error', 'No Credits Records', 'No Aleo credits records found in your wallet. You need private credits to bet with ALEO.');
+          addNotification('error', 'No private ALEO detected', 'This action needs shielded ALEO in the wallet inventory.');
           return null;
         }
 
@@ -71,11 +71,11 @@ export function useTransaction() {
           }
         }
 
-        addNotification('error', 'Insufficient Credits', `No credits record with at least ${(minMicrocredits / 1_000_000).toFixed(2)} ALEO found. You may need to shield (make private) your public ALEO balance.`);
+        addNotification('error', 'Private ALEO too small', `No shielded record large enough for ${(minMicrocredits / 1_000_000).toFixed(2)} ALEO was found. Convert public balance to private and retry.`);
         return null;
       } catch (err) {
         console.error('[fetchCreditsRecord] Error:', err);
-        addNotification('error', 'Record Fetch Failed', err instanceof Error ? err.message : 'Could not fetch credits records from wallet.');
+        addNotification('error', 'Wallet scan interrupted', err instanceof Error ? err.message : 'Unable to inspect private ALEO records in the wallet.');
         return null;
       }
     },
@@ -90,7 +90,7 @@ export function useTransaction() {
   const fetchUsdcxRecord = useCallback(
     async (minAmount: number, tokenType: 'USDCX' | 'USAD' = 'USDCX'): Promise<string | null> => {
       if (!connected) {
-        addNotification('error', 'Wallet Not Connected', 'Please connect your Shield Wallet first.');
+        addNotification('error', 'Wallet session required', 'Link a wallet before opening a private order.');
         return null;
       }
       const programId = tokenType === 'USAD' ? 'test_usad_stablecoin.aleo' : 'test_usdcx_stablecoin.aleo';
@@ -98,7 +98,7 @@ export function useTransaction() {
       try {
         const records = await requestRecords(programId, true);
         if (!records || records.length === 0) {
-          addNotification('error', `No ${label} Records`, `No private ${label} token records found. You need private ${label} to trade.`);
+          addNotification('error', `No private ${label} detected`, `This action needs shielded ${label} in the wallet inventory.`);
           return null;
         }
 
@@ -124,11 +124,11 @@ export function useTransaction() {
           }
         }
 
-        addNotification('error', `Insufficient ${label}`, `No ${label} record with at least ${(minAmount / 1_000_000).toFixed(2)} ${label} found. Convert public ${label} to private first.`);
+        addNotification('error', `Private ${label} too small`, `No shielded ${label} record large enough for ${(minAmount / 1_000_000).toFixed(2)} ${label} was found.`);
         return null;
       } catch (err) {
         console.error('[fetchUsdcxRecord] Error:', err);
-        addNotification('error', `${label} Fetch Failed`, err instanceof Error ? err.message : `Could not fetch ${label} records.`);
+        addNotification('error', 'Wallet scan interrupted', err instanceof Error ? err.message : `Unable to inspect private ${label} records in the wallet.`);
         return null;
       }
     },
@@ -138,7 +138,7 @@ export function useTransaction() {
   const execute = useCallback(
     async (transaction: AleoTransaction, onConfirmed?: (realTxId: string) => void) => {
       if (!connected) {
-        addNotification('error', 'Wallet Not Connected', 'Please connect your Shield Wallet first.');
+        addNotification('error', 'Wallet session required', 'Link a wallet before opening a private order.');
         return null;
       }
 
@@ -165,8 +165,8 @@ export function useTransaction() {
           // Show immediate success toast — wallet accepted the transaction
           const toastId = addNotification(
             'success',
-            'Transaction Submitted',
-            'Your transaction was accepted by the wallet.'
+            'Intent accepted',
+            'The wallet signed the order and passed it to the chain.'
           );
 
           // Fire onConfirmed callback after short delay (data refresh)
@@ -185,10 +185,10 @@ export function useTransaction() {
 
               if (explorerUrl) {
                 updateNotification(toastId, {
-                  title: 'Transaction Confirmed',
-                  message: `TX: ${confirmedId.slice(0, 20)}...`,
+                  title: 'Receipt linked',
+                  message: `Chain receipt: ${confirmedId.slice(0, 20)}...`,
                   link: explorerUrl,
-                  linkLabel: 'View on Explorer',
+                  linkLabel: 'Open receipt',
                 });
               }
 
@@ -202,20 +202,20 @@ export function useTransaction() {
         }
 
         setStatus('error');
-        addNotification('error', 'Transaction Failed', 'No transaction ID returned.');
+        addNotification('error', 'Submission incomplete', 'The wallet did not return a transaction identifier.');
         return null;
       } catch (err) {
         const raw = err instanceof Error ? err.message : 'Transaction failed';
         let message = raw;
-        let title = 'Transaction Failed';
+        let title = 'Submission failed';
 
         // Provide friendly error for common Aleo issues
         if (raw.includes('input ID') && raw.includes('already exists')) {
-          title = 'Record Already Spent';
-          message = 'This credits record was already used in a recent transaction. Please wait ~30 seconds for it to confirm, then try again.';
+          title = 'Record already consumed';
+          message = 'That private record was used recently. Wait for confirmation, then retry with a fresh record.';
         } else if (raw.includes('insufficient') || raw.includes('balance')) {
-          title = 'Insufficient Balance';
-          message = 'Not enough credits to cover the bet and transaction fee. Try a smaller amount.';
+          title = 'Spendable balance too low';
+          message = 'There is not enough private balance to cover the order and network fee.';
         }
 
         setError(message);

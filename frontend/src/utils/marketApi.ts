@@ -6,7 +6,7 @@ import { API_BASE } from '@/constants';
  */
 export async function fetchRealMarkets(): Promise<Market[]> {
   const res = await fetch(`${API_BASE}/markets`);
-  if (!res.ok) throw new Error('Failed to fetch markets');
+  if (!res.ok) throw new Error('Market relay unavailable');
   const data = await res.json();
   return (data.markets || []).map((m: Record<string, unknown>) => ({
     id: m.id as string,
@@ -20,9 +20,10 @@ export async function fetchRealMarkets(): Promise<Market[]> {
     status: m.status as string,
     endTime: m.endTime as number,
     createdAt: m.createdAt as number,
-    isLightning: m.isLightning as boolean,
+    isEclipse: m.isEclipse as boolean,
     resolvedOutcome: m.resolvedOutcome as number | undefined,
     tokenType: (m.tokenType as string) || 'ALEO',
     imageUrl: (m.imageUrl as string) || undefined,
   }));
 }
+

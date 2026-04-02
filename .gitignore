@@ -8,8 +8,12 @@ frontend/dist/
 backend/dist/
 
 # Leo build
-contract/veil_strike_v2/build/
-contract/veil_strike_v2/outputs/
+contract/obscura_protocol_v7/build/
+contract/obscura_protocol_v7/outputs/
+contract/obscura_protocol_v7_cx/build/
+contract/obscura_protocol_v7_cx/outputs/
+contract/obscura_protocol_v7_sd/build/
+contract/obscura_protocol_v7_sd/outputs/
 
 # Environment
 .env

@@ -1,4 +1,4 @@
-// Strike Round Manager — tracks lightning/strike-round markets for admin resolution.
+// Eclipse Round Manager — tracks eclipse/strike-round markets for admin resolution.
 // Markets are created with durations (24h, 48h, 7d, 30d). Admin manually resolves via flash_settle.
 // Oracle provides start price at creation and end price at resolution for UP/DOWN determination.
 
@@ -18,26 +18,26 @@ const ASSET_TERMS: Record<string, string[]> = {
 };
 
 // Fallback seed IDs (used if no markets found in cache yet)
-const SEED_LIGHTNING_FALLBACK: Record<'BTC' | 'ETH' | 'ALEO', string> = {
+const SEED_ECLIPSE_FALLBACK: Record<'BTC' | 'ETH' | 'ALEO', string> = {
   BTC: '4996210007700946181946925844129973971689300422125832342620831605415253333389field',
   ETH: '4634458192957872849621597187822568246583922089977590111134549454558548213015field',
   ALEO: '4278173522866567246556560167948434723044021497780470115660873330900641551519field',
 };
 
-/** Find the best ACTIVE lightning market for a given asset+token from the market cache.
+/** Find the best ACTIVE eclipse market for a given asset+token from the market cache.
  *  Skips resolved/cancelled markets so rounds auto-switch to new markets. */
-function getSeedLightningId(asset: 'BTC' | 'ETH' | 'ALEO', token: 'ALEO' | 'USDCX' | 'USAD' = 'ALEO'): string | null {
+function getSeedEclipseId(asset: 'BTC' | 'ETH' | 'ALEO', token: 'ALEO' | 'USDCX' | 'USAD' = 'ALEO'): string | null {
   const markets = getCachedMarkets();
   const terms = ASSET_TERMS[asset] || [asset];
   const match = markets
-    .filter((m) => m.isLightning && m.tokenType === token && m.outcomes.length === 2
+    .filter((m) => m.isEclipse && m.tokenType === token && m.outcomes.length === 2
       && m.status !== 'resolved' && m.status !== 'cancelled'
       && terms.some((t) => m.question.toUpperCase().includes(t)))
     .sort((a, b) => a.totalLiquidity - b.totalLiquidity)[0];
   if (match) return match.id;
   // Fallback seed IDs — only use if not already resolved on-chain
   if (token === 'ALEO') {
-    const fallbackId = SEED_LIGHTNING_FALLBACK[asset];
+    const fallbackId = SEED_ECLIPSE_FALLBACK[asset];
     const fallbackMarket = markets.find((m) => m.id === fallbackId);
     if (!fallbackMarket || (fallbackMarket.status !== 'resolved' && fallbackMarket.status !== 'cancelled')) {
       return fallbackId;
@@ -70,7 +70,7 @@ function getAssetPrice(asset: 'BTC' | 'ETH' | 'ALEO'): number {
  * Register a strike round market for tracking.
  * Called when a new strike round market is indexed from chain.
  */
-export function registerStrikeRound(marketId: string, asset: 'BTC' | 'ETH' | 'ALEO', tokenType: 'ALEO' | 'USDCX' | 'USAD', startPrice: number, endTime: number): void {
+export function registerEclipseRound(marketId: string, asset: 'BTC' | 'ETH' | 'ALEO', tokenType: 'ALEO' | 'USDCX' | 'USAD', startPrice: number, endTime: number): void {
   const key = `${asset}-${tokenType}-${marketId.slice(0, 16)}`;
   if (activeRounds.has(key)) return;
   activeRounds.set(key, {
@@ -82,7 +82,7 @@ export function registerStrikeRound(marketId: string, asset: 'BTC' | 'ETH' | 'AL
     startPrice,
     settled: false,
   });
-  console.log(`[StrikeRoundMgr] Registered ${key} price=$${startPrice}`);
+  console.log(`[EclipseRoundMgr] Registered ${key} price=$${startPrice}`);
 }
 
 /**
@@ -104,9 +104,9 @@ export function getMarketAssignments(): Map<string, { marketId: string; tokenTyp
 }
 
 /**
- * Get all active/recent lightning rounds for the API.
+ * Get all active/recent eclipse rounds for the API.
  */
-export function getActiveLightningRounds(): Array<{
+export function getActiveEclipseRounds(): Array<{
   id: string;
   marketId: string;
   asset: string;
@@ -156,12 +156,12 @@ export function getActiveLightningRounds(): Array<{
 }
 
 /**
- * Initialize on startup — seed active rounds from existing lightning markets in cache.
+ * Initialize on startup — seed active rounds from existing eclipse markets in cache.
  */
-export function initSeedLightningRounds(): void {
+export function initSeedEclipseRounds(): void {
   const markets = getCachedMarkets();
   for (const market of markets) {
-    if (!market.isLightning || market.status === 'resolved' || market.status === 'cancelled') continue;
+    if (!market.isEclipse || market.status === 'resolved' || market.status === 'cancelled') continue;
     const q = market.question.toUpperCase();
     let asset: 'BTC' | 'ETH' | 'ALEO' | null = null;
     if (q.includes('BTC') || q.includes('BITCOIN')) asset = 'BTC';
@@ -184,7 +184,7 @@ export function initSeedLightningRounds(): void {
       settled: false,
     });
   }
-  console.log(`[StrikeRoundMgr] Seeded ${activeRounds.size} active rounds`);
+  console.log(`[EclipseRoundMgr] Seeded ${activeRounds.size} active rounds`);
 }
 
 /**
@@ -212,7 +212,7 @@ export async function adminResolveMarket(
     }
   }
 
-  console.log(`[StrikeRoundMgr] Admin resolving market=${marketId.slice(0, 20)}... outcome=${winningOutcome} token=${tokenType || 'ALEO'}`);
+  console.log(`[EclipseRoundMgr] Admin resolving market=${marketId.slice(0, 20)}... outcome=${winningOutcome} token=${tokenType || 'ALEO'}`);
 
   const txId = await dispatchSettle(marketId, winningOutcome, tokenType);
 
@@ -226,7 +226,7 @@ export async function adminResolveMarket(
       round.onChainResolved = true;
     }
   }
-  console.log(`[StrikeRoundMgr] Admin resolve success tx=${txId}`);
+  console.log(`[EclipseRoundMgr] Admin resolve success tx=${txId}`);
 
   // Auto-create replacement market in the background
   let replacementTxId: string | null = null;
@@ -238,8 +238,8 @@ export async function adminResolveMarket(
 }
 
 /**
- * Create a replacement lightning market after resolving the old one.
- * Uses the same question format so getSeedLightningId() will find it.
+ * Create a replacement eclipse market after resolving the old one.
+ * Uses the same question format so getSeedEclipseId() will find it.
  */
 async function createReplacementMarket(
   asset: 'BTC' | 'ETH' | 'ALEO',
@@ -247,17 +247,17 @@ async function createReplacementMarket(
 ): Promise<string | null> {
   const resolver = getResolverAddress();
   if (!resolver) {
-    console.error('[LightningMgr] No resolver address, cannot create replacement market');
+    console.error('[EclipseMgr] No resolver address, cannot create replacement market');
     return null;
   }
 
-  const question = `${asset} Strike Round`;
-  // Same hash algorithm as frontend CreateLightningForm
+  const question = `${asset} Eclipse Round`;
+  // Same hash algorithm as frontend CreateEclipseForm
   const questionHash = `${BigInt(Array.from(new TextEncoder().encode(question)).reduce((h, b) => h * 31n + BigInt(b), 0n)) % BigInt('0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001')}field`;
 
   const currentBlock = await fetchCurrentBlock();
   if (currentBlock <= 0) {
-    console.error('[LightningMgr] Cannot fetch block height for replacement market');
+    console.error('[EclipseMgr] Cannot fetch block height for replacement market');
     return null;
   }
 
@@ -267,7 +267,7 @@ async function createReplacementMarket(
   const initialLiquidity = 5_000_000; // 5 ALEO/USDCX/USAD
   const nonce = `${BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER))}field`;
 
-  console.log(`[StrikeRoundMgr] Creating replacement ${asset}-${tokenType} market...`);
+  console.log(`[EclipseRoundMgr] Creating replacement ${asset}-${tokenType} market...`);
 
   const txId = await dispatchCreateMarket(
     questionHash, 1, 2,
@@ -277,25 +277,25 @@ async function createReplacementMarket(
   );
 
   if (txId) {
-    console.log(`[StrikeRoundMgr] Replacement market created tx=${txId}. Scanner will index it.`);
-    // Pre-register metadata so scanner recognizes it as lightning
+    console.log(`[EclipseRoundMgr] Replacement market created tx=${txId}. Scanner will index it.`);
+    // Pre-register metadata so scanner recognizes it as eclipse
     registerMarket(txId, {
       questionHash,
       question,
       outcomes: ['Up', 'Down'],
-      isLightning: true,
+      isEclipse: true,
       tokenType,
     });
     persistRegistry();
   } else {
-    console.error(`[StrikeRoundMgr] Failed to create replacement ${asset}-${tokenType} market`);
+    console.error(`[EclipseRoundMgr] Failed to create replacement ${asset}-${tokenType} market`);
   }
 
   return txId;
 }
 
 /**
- * Create a replacement lightning market for a given resolved marketId.
+ * Create a replacement eclipse market for a given resolved marketId.
  * Called by the admin route after wallet-based flash_settle.
  * Determines asset from the market's question text in the registry.
  */
@@ -327,7 +327,7 @@ export async function adminCreateReplacement(
   }
 
   if (!asset) {
-    console.error(`[StrikeRoundMgr] Cannot determine asset for market ${marketId.slice(0, 20)}...`);
+    console.error(`[EclipseRoundMgr] Cannot determine asset for market ${marketId.slice(0, 20)}...`);
     return null;
   }
 
@@ -368,3 +368,4 @@ export function getActiveMarkets(): Array<{
   }
   return Array.from(marketMap.entries()).map(([marketId, info]) => ({ marketId, ...info }));
 }
+

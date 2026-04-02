@@ -2,7 +2,7 @@
 
 ## System Overview
 
-Veil Strike is a three-tier application:
+Obscura Protocol is a three-tier application:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -23,7 +23,7 @@ Veil Strike is a three-tier application:
 │              Aleo Blockchain (Testnet)                   │
 │                                                         │
 │  ┌─────────────────────────────────────────────────────┐│
-│  │            veil_strike_v4.aleo                       ││
+│  │            obscura_protocol_v7.aleo                       ││
 │  │                                                     ││
 │  │  Transitions (24)  │  Records (4)  │  Mappings (9)  ││
 │  │                                                     ││
@@ -54,7 +54,7 @@ Veil Strike is a three-tier application:
 1. Backend cron job fetches prices from CoinGecko every minute
 2. Admin calls `update_oracle_prices(btc, eth, aleo)` transition
 3. Finalize function validates admin and writes to `oracle_prices` mapping
-4. Lightning markets reference oracle prices for auto-resolution
+4. Eclipse markets reference oracle prices for auto-resolution
 
 ### Privacy Guarantees
 
@@ -72,7 +72,7 @@ App
 │   ├── HeroSection
 │   ├── LiveMarketsSection
 │   ├── FeaturesSection
-│   ├── LightningSection
+│   ├── EclipseSection
 │   ├── HowItWorksSection
 │   ├── PrivacySection
 │   ├── ArchitectureSection
@@ -94,9 +94,9 @@ App
 │   ├── TradeHistory
 │   ├── TradePanel
 │   └── MarketStats
-├── Lightning (/lightning)
-│   ├── ActiveRounds → LightningCard[]
-│   ├── LightningHistory
+├── ECLIPSE (/ECLIPSE)
+│   ├── ActiveRounds → EclipseCard[]
+│   ├── EclipseHistory
 │   └── OraclePriceFeed
 ├── Pools (/pools)
 │   ├── PoolStats
@@ -112,7 +112,7 @@ App
 │   └── StreakDisplay
 ├── CreateMarket (/create)
 │   ├── CreateEventForm
-│   └── CreateLightningForm
+│   └── CreateEclipseForm
 ├── Stats (/stats)
 │   └── StatsOverview
 └── Docs (/docs)
@@ -127,3 +127,4 @@ Zustand stores with minimal boilerplate:
 - **oracleStore**: Real-time price feeds (BTC/ETH/ALEO)
 - **portfolioStore**: User positions, LP receipts, trade history
 - **notificationStore**: Toast notifications
+

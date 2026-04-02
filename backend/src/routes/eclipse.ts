@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import { getLightningRounds } from '../services/oracle';
-import { getActiveLightningRounds, getMarketAssignments, adminResolveMarket, getActiveMarkets, adminCreateReplacement } from '../services/lightning-manager';
+import { getEclipseRounds } from '../services/oracle';
+import { getActiveEclipseRounds, getMarketAssignments, adminResolveMarket, getActiveMarkets, adminCreateReplacement } from '../services/eclipse-manager';
 import { getRoundBotStatus, getBotActiveRounds, forceSettleSlot, startRoundBot, stopRoundBot } from '../services/round-bot';
 
 const router = Router();
 
 // GET / — Oracle rounds enriched with per-round market IDs and on-chain status
 router.get('/', (_req, res) => {
-  const oracleRounds = getLightningRounds();
+  const oracleRounds = getEclipseRounds();
   const assignments = getMarketAssignments();
 
   // For each oracle round, attach market assignments for all token types
@@ -37,7 +37,7 @@ router.get('/', (_req, res) => {
 });
 
 router.get('/active', (_req, res) => {
-  const activeRounds = getActiveLightningRounds();
+  const activeRounds = getActiveEclipseRounds();
   res.json({ activeRounds });
 });
 
@@ -77,7 +77,7 @@ router.post('/admin/resolve', async (req, res) => {
   }
 });
 
-// POST /admin/create-replacement — Create a replacement lightning market after wallet-based resolve
+// POST /admin/create-replacement — Create a replacement ECLIPSE market after wallet-based resolve
 // Body: { marketId: string, tokenType?: 'ALEO'|'USDCX'|'USAD' }
 router.post('/admin/create-replacement', async (req, res) => {
   const { marketId, tokenType } = req.body;
@@ -142,3 +142,4 @@ router.post('/bot/force-settle', async (req, res) => {
 });
 
 export default router;
+

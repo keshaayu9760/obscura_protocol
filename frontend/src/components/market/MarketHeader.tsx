@@ -37,7 +37,7 @@ export default function MarketHeader({ market }: MarketHeaderProps) {
           marketId: market.id,
           question: editName.trim(),
           outcomes: market.outcomes,
-          isLightning: market.isLightning,
+          isEclipse: market.isEclipse,
           tokenType: market.tokenType || undefined,
         }),
       });
@@ -56,10 +56,10 @@ export default function MarketHeader({ market }: MarketHeaderProps) {
         <span className="text-xs text-gray-500 font-mono uppercase px-2 py-0.5 bg-dark-200 rounded-md">
           {market.category}
         </span>
-        {market.isLightning && (
+        {market.isEclipse && (
           <span className="flex items-center gap-1 text-xs text-amber-400 px-2 py-0.5 bg-amber-400/10 rounded-md">
             <FireIcon className="w-3 h-3" />
-            Lightning
+            Eclipse
           </span>
         )}
       </div>
@@ -115,3 +115,4 @@ export default function MarketHeader({ market }: MarketHeaderProps) {
     </div>
   );
 }
+

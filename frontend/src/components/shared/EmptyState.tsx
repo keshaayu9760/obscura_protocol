@@ -14,17 +14,17 @@ interface EmptyStateProps {
 
 export default function EmptyState({ title, description, action, actionLabel, actionHref, icon }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      {icon && <div className="text-dark-400 mb-4">{icon}</div>}
-      <h3 className="text-lg font-heading font-semibold text-gray-300 mb-2">{title}</h3>
-      <p className="text-sm text-gray-500 max-w-sm mb-6">{description}</p>
+    <div className="glass-card mx-auto flex max-w-xl flex-col items-center justify-center px-6 py-14 text-center">
+      {icon && <div className="mb-4 text-smoke/40">{icon}</div>}
+      <h3 className="mb-2 font-heading text-2xl font-semibold text-white">{title}</h3>
+      <p className="mb-6 max-w-sm text-sm leading-6 text-smoke/70">{description}</p>
       {action && (
-        <button onClick={action.onClick} className="btn-primary text-sm">
+        <button onClick={action.onClick} className="btn-primary px-5 py-3 text-sm">
           {action.label}
         </button>
       )}
       {actionLabel && actionHref && (
-        <Link to={actionHref} className="btn-primary text-sm">
+        <Link to={actionHref} className="btn-primary px-5 py-3 text-sm">
           {actionLabel}
         </Link>
       )}

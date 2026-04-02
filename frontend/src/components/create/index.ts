@@ -1,2 +1,3 @@
 export { default as CreateEventForm } from './CreateEventForm';
-export { default as CreateLightningForm } from './CreateLightningForm';
+export { default as CreateEclipseForm } from './CreateEclipseForm';
+

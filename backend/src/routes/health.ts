@@ -7,11 +7,11 @@ router.get('/', (_req, res) => {
     status: 'ok',
     timestamp: Date.now(),
     version: '6.0.0',
-    program: 'veil_strike_v6.aleo',
+    program: 'obscura_protocol_v7.aleo',
     programs: {
-      main: 'veil_strike_v6.aleo',
-      usdcx: 'veil_strike_v6_cx.aleo',
-      usad: 'veil_strike_v6_sd.aleo',
+      main: 'obscura_protocol_v7.aleo',
+      usdcx: 'obscura_protocol_v7_cx.aleo',
+      usad: 'obscura_protocol_v7_sd.aleo',
     },
   });
 });

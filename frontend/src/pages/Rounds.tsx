@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useOracleStore } from '@/stores/oracleStore';
 import { useMarketStore } from '@/stores/marketStore';
-import { useLightningBetStore } from '@/stores/lightningBetStore';
-import { ActiveRounds, LightningHistory, OraclePriceFeed } from '@/components/lightning';
+import { useEclipseBetStore } from '@/stores/eclipseBetStore';
+import { ActiveRounds, EclipseHistory, OraclePriceFeed } from '@/components/eclipse';
 import PageHeader from '@/components/layout/PageHeader';
 import { API_BASE } from '@/constants';
 
-interface StrikeRound {
+interface EclipseRound {
   id: string;
   asset: 'BTC' | 'ETH' | 'ALEO';
   tokenType?: string;
@@ -21,14 +21,14 @@ interface StrikeRound {
 export default function Rounds() {
   const { fetchPrices } = useOracleStore();
   const { fetchMarkets, markets } = useMarketStore();
-  const resolveBets = useLightningBetStore((s) => s.resolveBets);
-  const expireStaleBets = useLightningBetStore((s) => s.expireStaleBets);
-  const bets = useLightningBetStore((s) => s.bets);
-  const [allRounds, setAllRounds] = useState<StrikeRound[]>([]);
+  const resolveBets = useEclipseBetStore((s) => s.resolveBets);
+  const expireStaleBets = useEclipseBetStore((s) => s.expireStaleBets);
+  const bets = useEclipseBetStore((s) => s.bets);
+  const [allRounds, setAllRounds] = useState<EclipseRound[]>([]);
 
   const fetchAllRounds = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/lightning`);
+      const res = await fetch(`${API_BASE}/eclipse`);
       if (res.ok) {
         const data = await res.json();
         setAllRounds(data.rounds || []);
@@ -83,15 +83,15 @@ export default function Rounds() {
   return (
     <div>
       <PageHeader
-        title="Strike Rounds"
-        subtitle="Price prediction markets — pick a direction, win when you're right"
-        action={{ label: '+ Create Round', href: '/create' }}
+        title="Pulse Sessions"
+        subtitle="Short-cycle directional books sourced from the live oracle feed."
+        action={{ label: 'Open Studio', href: '/create' }}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
         <div className="lg:col-span-3 space-y-6">
           <ActiveRounds markets={[]} />
-          <LightningHistory markets={[]} />
+          <EclipseHistory markets={[]} />
         </div>
         <div>
           <OraclePriceFeed />
@@ -100,3 +100,4 @@ export default function Rounds() {
     </div>
   );
 }
+

@@ -34,9 +34,9 @@ export default function Markets() {
   return (
     <div>
       <PageHeader
-        title="Markets"
-        subtitle="Browse and trade on prediction markets with full privacy"
-        action={{ label: '+ Create Market', href: '/create' }}
+        title="Signal Board"
+        subtitle="Scan live books, filter by asset, and open private positions without changing the engine underneath."
+        action={{ label: 'Open Studio', href: '/create' }}
       />
 
       <MarketFilters
@@ -55,9 +55,9 @@ export default function Markets() {
       ) : markets.length === 0 ? (
         <EmptyState
           icon={<ChartIcon className="w-10 h-10 text-gray-600" />}
-          title="No markets found"
-          description="Try adjusting your filters or create a new market"
-          actionLabel="Create Market"
+          title="No live books on the board"
+          description="Try widening the filters or launch a new book from the studio."
+          actionLabel="Open Studio"
           actionHref="/create"
         />
       ) : (

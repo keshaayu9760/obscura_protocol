@@ -53,7 +53,7 @@ export default function MarketCard({ market, index = 0 }: MarketCardProps) {
     >
       <Link to={`/markets/${market.id}`} className="block glass-card-hover p-0 h-full group">
         {/* Top accent line */}
-        <div className={`h-px w-full ${market.isLightning ? 'bg-gradient-to-r from-transparent via-amber-400/30 to-transparent' : 'bg-gradient-to-r from-transparent via-white/[0.06] to-transparent'}`} />
+        <div className={`h-px w-full ${market.isEclipse ? 'bg-gradient-to-r from-transparent via-amber-400/30 to-transparent' : 'bg-gradient-to-r from-transparent via-white/[0.06] to-transparent'}`} />
 
         <div className="p-5">
           {/* Header: Thumbnail + Category/Title + Token Icon */}
@@ -71,14 +71,14 @@ export default function MarketCard({ market, index = 0 }: MarketCardProps) {
               ) : detectedAsset ? (
                 <CryptoIcon symbol={detectedAsset} size={30} />
               ) : (
-                <span className="text-xl">{market.isLightning ? '⚡' : '📊'}</span>
+                <span className="text-xl">{market.isEclipse ? '⚡' : '📊'}</span>
               )}
             </div>
 
             <div className="flex-1 min-w-0">
               {/* Category Tag */}
               <span className="text-[10px] text-gray-500 uppercase tracking-widest font-heading">
-                {market.isLightning ? 'Lightning' : market.category}
+                {market.isEclipse ? 'Eclipse' : market.category}
               </span>
 
               {/* Title */}
@@ -175,3 +175,4 @@ export default function MarketCard({ market, index = 0 }: MarketCardProps) {
     </motion.div>
   );
 }
+

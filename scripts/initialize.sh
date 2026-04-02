@@ -1,5 +1,5 @@
 #!/bin/bash
-# Veil Strike - Initialize Protocol
+# Obscura Protocol - Initialize Protocol
 # Calls the initialize() transition to set admin and protocol params
 set -euo pipefail
 
@@ -11,10 +11,10 @@ fi
 NETWORK="${NETWORK:-testnet}"
 ENDPOINT="${ENDPOINT:-https://api.explorer.provable.com/v1}"
 
-echo "Initializing Veil Strike protocol..."
+echo "Initializing Obscura Protocol protocol..."
 
 snarkos developer execute \
-  veil_strike_v4.aleo \
+  obscura_protocol_v7.aleo \
   initialize \
   --private-key "$PRIVATE_KEY" \
   --query "$ENDPOINT" \

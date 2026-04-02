@@ -1,5 +1,5 @@
 #!/bin/bash
-# Veil Strike - Seed Markets
+# Obscura Protocol - Seed Markets
 # Creates initial prediction markets for demo purposes
 set -euo pipefail
 
@@ -17,7 +17,7 @@ echo "Creating seed markets..."
 # Market 1: Bitcoin price prediction
 echo "[1/3] Creating BTC prediction market..."
 snarkos developer execute \
-  veil_strike_v4.aleo \
+  obscura_protocol_v7.aleo \
   create_market \
   "10000000u64" \
   "2u8" \
@@ -33,7 +33,7 @@ sleep 5
 # Market 2: Aleo TVL prediction
 echo "[2/3] Creating Aleo TVL market..."
 snarkos developer execute \
-  veil_strike_v4.aleo \
+  obscura_protocol_v7.aleo \
   create_market \
   "5000000u64" \
   "2u8" \
@@ -46,10 +46,10 @@ snarkos developer execute \
 
 sleep 5
 
-# Market 3: Lightning market
-echo "[3/3] Creating Lightning market..."
+# Market 3: ECLIPSE market
+echo "[3/3] Creating ECLIPSE market..."
 snarkos developer execute \
-  veil_strike_v4.aleo \
+  obscura_protocol_v7.aleo \
   create_market \
   "2000000u64" \
   "300u64" \
@@ -62,3 +62,4 @@ snarkos developer execute \
 echo ""
 echo "Seed markets created successfully!"
 echo "Markets should appear on-chain within ~30 seconds."
+

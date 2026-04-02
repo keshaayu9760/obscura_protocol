@@ -1,10 +1,10 @@
-// Round Bot — automated 15-min Strike Round lifecycle.
+// Round Bot — automated 15-min Eclipse Round lifecycle.
 // State machine per market slot: IDLE → CREATING → OPEN → SETTLING → IDLE
 // Empty rounds (no bets) get a virtual reset at zero on-chain cost.
 
 import { config } from '../config';
 import { getCachedPrices } from './oracle';
-import { registerMarket, persistRegistry, clearStaleLightningFlags, getCachedMarkets } from './indexer';
+import { registerMarket, persistRegistry, clearStaleEclipseFlags, getCachedMarkets } from './indexer';
 import { savePendingMeta, deletePendingMeta } from './scanner';
 import { delegatedSettle, delegatedCreateMarket, isDelegatedProvingAvailable, getResolverAddressFromKey } from './delegated-prover';
 import { fetchCurrentBlock } from './chain-executor';
@@ -108,7 +108,7 @@ function loadState(): BotState | null {
 // ─── Market Creation ─────────────────────────────────────────────────────────
 
 function generateQuestionHash(asset: Asset, tokenType: TokenType, roundNumber: number): string {
-  const question = `${asset} Strike Round #${roundNumber}`;
+  const question = `${asset} Eclipse Round #${roundNumber}`;
   const hash = BigInt(
     Array.from(new TextEncoder().encode(question))
       .reduce((h, b) => h * 31n + BigInt(b), 0n)
@@ -167,7 +167,7 @@ function extractMarketIdFromTx(transaction: any): string | null {
 async function createMarketForSlot(slot: MarketSlot): Promise<void> {
   slot.state = 'creating';
   slot.error = null;
-  const question = `${slot.asset} Strike Round #${slot.roundNumber}`;
+  const question = `${slot.asset} Eclipse Round #${slot.roundNumber}`;
   const questionHash = generateQuestionHash(slot.asset, slot.tokenType, slot.roundNumber);
   const nonce = generateNonce();
 
@@ -186,11 +186,11 @@ async function createMarketForSlot(slot: MarketSlot): Promise<void> {
 
   console.log(`[RoundBot] Creating ${slot.id} round #${slot.roundNumber}: "${question}"`);
 
-  // Save pending meta so scanner registers this with isLightning: true + correct question
+  // Save pending meta so scanner registers this with isEclipse: true + correct question
   savePendingMeta(questionHash, {
     question,
     outcomes: ['Up', 'Down'],
-    isLightning: true,
+    isEclipse: true,
     createdAt: Date.now(),
   });
 
@@ -221,11 +221,11 @@ async function createMarketForSlot(slot: MarketSlot): Promise<void> {
         questionHash,
         question,
         outcomes: ['Up', 'Down'],
-        isLightning: true,
+        isEclipse: true,
         tokenType: slot.tokenType === 'ALEO' ? undefined : slot.tokenType,
         botEndTime,
       });
-      // Delete pending meta so scanner won't tag old markets with same questionHash as lightning
+      // Delete pending meta so scanner won't tag old markets with same questionHash as ECLIPSE
       deletePendingMeta(questionHash);
       persistRegistry();
     }
@@ -365,11 +365,11 @@ async function fetchPoolVolume(marketId: string, tokenType: TokenType): Promise<
 async function findMarketIdForSlot(slot: MarketSlot): Promise<string | null> {
   // Look up from the indexer's cached markets
   const markets = getCachedMarkets();
-  const question = `${slot.asset} Strike Round`;
+  const question = `${slot.asset} Eclipse Round`;
 
-  // Find an active lightning market matching our slot
+  // Find an active ECLIPSE market matching our slot
   const match = markets.find((m) =>
-    m.isLightning &&
+    m.isEclipse &&
     m.status === 'active' &&
     (m.tokenType || 'ALEO') === slot.tokenType &&
     m.question.toUpperCase().includes(slot.asset)
@@ -487,9 +487,9 @@ export async function startRoundBot(): Promise<void> {
         const questionHash = generateQuestionHash(slot.asset, slot.tokenType, slot.roundNumber);
         registerMarket(slot.marketId, {
           questionHash,
-          question: `${slot.asset} Strike Round #${slot.roundNumber}`,
+          question: `${slot.asset} Eclipse Round #${slot.roundNumber}`,
           outcomes: ['Up', 'Down'],
-          isLightning: true,
+          isEclipse: true,
           tokenType: slot.tokenType === 'ALEO' ? undefined : slot.tokenType,
           botEndTime: slot.endTime,
         });
@@ -533,17 +533,17 @@ export async function startRoundBot(): Promise<void> {
 
   running = true;
 
-  // Clear lightning flags only for resolved/cancelled/stale markets (not active ones)
-  const cleared = clearStaleLightningFlags();
-  if (cleared > 0) console.log(`[RoundBot] Cleared ${cleared} stale lightning flags`);
+  // Clear ECLIPSE flags only for resolved/cancelled/stale markets (not active ones)
+  const cleared = clearStaleEclipseFlags();
+  if (cleared > 0) console.log(`[RoundBot] Cleared ${cleared} stale ECLIPSE flags`);
 
-  // Adopt existing active lightning markets from cache into idle slots
+  // Adopt existing active ECLIPSE markets from cache into idle slots
   // This prevents creating duplicate markets when the bot restarts
   const cached = getCachedMarkets();
   for (const slot of botState.slots) {
     if (slot.state !== 'idle') continue;
     const match = cached.find((m) =>
-      m.isLightning &&
+      m.isEclipse &&
       m.status === 'active' &&
       (m.tokenType || 'ALEO') === slot.tokenType &&
       m.question.toUpperCase().includes(slot.asset) &&
@@ -644,7 +644,7 @@ export function getRoundBotStatus(): {
 }
 
 /**
- * Get active rounds for the lightning API (compatible with existing frontend).
+ * Get active rounds for the ECLIPSE API (compatible with existing frontend).
  */
 export function getBotActiveRounds(): Array<{
   id: string;
@@ -711,3 +711,4 @@ export async function forceSettleSlot(slotId: string, winningOutcome: 1 | 2): Pr
     return { success: false, error: result.error };
   }
 }
+

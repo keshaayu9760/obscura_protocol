@@ -1,13 +1,13 @@
 #!/bin/bash
-# Veil Strike - Leo Contract Deployment Script
-# Deploys veil_strike_v4.aleo to Aleo testnet
+# Obscura Protocol - Leo Contract Deployment Script
+# Deploys obscura_protocol_v7.aleo to Aleo testnet
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CONTRACT_DIR="$SCRIPT_DIR/../contract/veil_strike_v4"
+CONTRACT_DIR="$SCRIPT_DIR/../contract/obscura_protocol_v7"
 
 echo "============================================"
-echo "  Veil Strike - Contract Deployment"
+echo "  Obscura Protocol - Contract Deployment"
 echo "============================================"
 
 # Check for required env vars
@@ -22,7 +22,7 @@ ENDPOINT="${ENDPOINT:-https://api.explorer.provable.com/v1}"
 
 echo "Network:  $NETWORK"
 echo "Endpoint: $ENDPOINT"
-echo "Program:  veil_strike_v4.aleo"
+echo "Program:  obscura_protocol_v7.aleo"
 echo ""
 
 # Navigate to contract directory
@@ -39,7 +39,7 @@ leo run initialize || echo "Skipping test run (may require valid input)"
 # Deploy to testnet
 echo "[3/3] Deploying to $NETWORK..."
 snarkos developer deploy \
-  veil_strike_v4.aleo \
+  obscura_protocol_v7.aleo \
   --private-key "$PRIVATE_KEY" \
   --query "$ENDPOINT" \
   --broadcast "$ENDPOINT/$NETWORK/transaction/broadcast" \
@@ -51,7 +51,7 @@ echo "============================================"
 echo "  Deployment complete!"
 echo "============================================"
 echo ""
-echo "Program ID: veil_strike_v4.aleo"
+echo "Program ID: obscura_protocol_v7.aleo"
 echo "Network:    $NETWORK"
 echo ""
 echo "Next steps:"

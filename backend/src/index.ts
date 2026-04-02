@@ -8,14 +8,14 @@ import { fetchMarketsFromChain, setCachedMarkets } from './services/indexer';
 import { resolveExpiredMarkets } from './services/resolver';
 import { scanForNewMarkets } from './services/scanner';
 import { autoResolveMarkets } from './services/auto-resolver';
-import { initSeedLightningRounds } from './services/lightning-manager';
+import { initSeedEclipseRounds } from './services/eclipse-manager';
 import { warmupWorker } from './services/proof-dispatcher';
 import { startRoundBot } from './services/round-bot';
 import marketsRouter from './routes/markets';
 import oracleRouter from './routes/oracle';
 import statsRouter from './routes/stats';
 import healthRouter from './routes/health';
-import lightningRouter from './routes/lightning';
+import eclipseRouter from './routes/eclipse';
 import governanceRouter from './routes/governance';
 
 const app = express();
@@ -28,7 +28,7 @@ app.use('/api/health', healthRouter);
 app.use('/api/markets', marketsRouter);
 app.use('/api/oracle', oracleRouter);
 app.use('/api/stats', statsRouter);
-app.use('/api/lightning', lightningRouter);
+app.use('/api/eclipse', eclipseRouter);
 app.use('/api/governance', governanceRouter);
 
 // Initialize data
@@ -40,7 +40,7 @@ async function initialize() {
   ]);
   setCachedMarkets(markets);
   recordPriceSnapshot();
-  initSeedLightningRounds();
+  initSeedEclipseRounds();
   warmupWorker(); // Pre-initialize SDK in worker thread
 
   // Start automated round bot (delegated proving required)
@@ -106,8 +106,9 @@ cron.schedule('*/2 * * * *', async () => {
 // Start server
 initialize().then(() => {
   app.listen(config.port, () => {
-    console.log(`[Server] Veil Strike backend running on port ${config.port}`);
+    console.log(`[Server] Obscura Protocol backend running on port ${config.port}`);
     console.log(`[Server] Oracle interval: ${config.oracleIntervalMinutes}m`);
     console.log(`[Server] Resolver interval: ${config.resolverIntervalMinutes}m`);
   });
 });
+

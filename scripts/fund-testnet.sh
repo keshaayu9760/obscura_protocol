@@ -1,5 +1,5 @@
 #!/bin/bash
-# Veil Strike - Fund Testnet Account
+# Obscura Protocol - Fund Testnet Account
 # Gets testnet credits from the Aleo faucet
 set -euo pipefail
 

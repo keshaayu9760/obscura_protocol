@@ -19,7 +19,7 @@ async function main() {
   if (!apiKey || !consumerId) {
     console.error('ERROR: Set PROVABLE_API_KEY and PROVABLE_CONSUMER_ID in .env');
     console.log('\nTo register:');
-    console.log('  curl -X POST https://api.provable.com/consumers -H "Content-Type: application/json" -d \'{"username":"veil-strike"}\'');
+    console.log('  curl -X POST https://api.provable.com/consumers -H "Content-Type: application/json" -d \'{"username":"obscura-protocol"}\'');
     console.log('  → Response: { "id": "CONSUMER_ID", "key": "API_KEY" }');
     process.exit(1);
   }
@@ -38,7 +38,7 @@ async function main() {
   const { ProgramManager, AleoNetworkClient, AleoKeyProvider, NetworkRecordProvider, Account } = sdk;
 
   const endpoint = process.env.ALEO_ENDPOINT || 'https://api.explorer.provable.com/v1';
-  const programId = 'veil_strike_v6.aleo';
+  const programId = 'obscura_protocol_v7.aleo';
 
   // Initialize
   const account = new Account({ privateKey });

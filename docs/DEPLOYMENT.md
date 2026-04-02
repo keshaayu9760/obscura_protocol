@@ -32,7 +32,7 @@ export ENDPOINT="https://api.explorer.provable.com/v1"
 
 ```bash
 # Build the Leo program
-cd contract/veil_strike_v4
+cd contract/obscura_protocol_v7
 leo build
 
 # Deploy to testnet
@@ -56,7 +56,7 @@ This sets the deployer as the protocol admin and initializes default parameters.
 ./scripts/seed-markets.sh
 ```
 
-Creates 3 initial markets (2 event markets + 1 lightning market).
+Creates 3 initial markets (2 event markets + 1 ECLIPSE market).
 
 ## Step 6: Start Backend
 
@@ -88,7 +88,7 @@ Open http://localhost:5173 in your browser.
 2. Create or import an Aleo account
 3. Switch to testnet
 4. Fund your account with testnet credits
-5. Click "Connect Wallet" on the Veil Strike app
+5. Click "Connect Wallet" on the Obscura Protocol app
 
 ## Production Deployment
 
@@ -103,7 +103,7 @@ npm run build
 Set environment variables:
 ```
 VITE_API_BASE=https://your-api-domain.com/api
-VITE_PROGRAM_ID=veil_strike_v4.aleo
+VITE_PROGRAM_ID=obscura_protocol_v7.aleo
 ```
 
 ### Backend (Railway/Render/VPS)
@@ -130,7 +130,7 @@ For production, set up a dedicated oracle service:
 ./scripts/update-oracle.sh
 ```
 
-Recommended: Run every 1 minute for lightning markets.
+Recommended: Run every 1 minute for Eclipse markets.
 
 ## Verification
 
@@ -141,3 +141,4 @@ After deployment, verify:
 3. Oracle working: `curl http://localhost:3001/api/oracle`
 4. Markets loaded: `curl http://localhost:3001/api/markets`
 5. Frontend rendering: Open http://localhost:5173
+

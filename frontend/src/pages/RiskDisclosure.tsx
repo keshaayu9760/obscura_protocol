@@ -4,7 +4,7 @@ import Card from '@/components/shared/Card';
 export default function RiskDisclosure() {
   return (
     <div>
-      <PageHeader title="Risk Disclosure" subtitle="Important information about trading risks" />
+      <PageHeader title="Risk Notes" subtitle="Important operating risks for traders, LPs, and governance participants." />
       <Card className="p-8 max-w-4xl prose prose-invert prose-sm">
         <div className="space-y-6 text-sm text-gray-400 leading-relaxed">
           <div className="p-4 rounded-xl bg-accent-red/5 border border-accent-red/20">
@@ -21,7 +21,7 @@ export default function RiskDisclosure() {
               <li>Outcome share prices can fluctuate rapidly and unpredictably.</li>
               <li>Markets may resolve against your position, resulting in total loss of your stake.</li>
               <li>Low-liquidity markets may have high slippage, making it difficult to exit positions.</li>
-              <li>Lightning markets have very short time horizons and amplified volatility risk.</li>
+              <li>Eclipse markets have very short time horizons and amplified volatility risk.</li>
             </ul>
           </section>
 

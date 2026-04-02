@@ -8,11 +8,11 @@ import Card from '@/components/shared/Card';
 import Badge from '@/components/shared/Badge';
 import { BoltIcon, FireIcon, ClockIcon } from '@/components/icons';
 
-interface LightningCardProps {
+interface EclipseCardProps {
   market: Market;
 }
 
-export default function LightningCard({ market }: LightningCardProps) {
+export default function EclipseCard({ market }: EclipseCardProps) {
   const prices = calculatePrices(market.reserves);
   const countdown = useCountdown(market.endTime);
   const isUrgent = countdown.days === 0 && countdown.hours === 0 && countdown.minutes < 10;
@@ -20,7 +20,7 @@ export default function LightningCard({ market }: LightningCardProps) {
   return (
     <Link to={`/markets/${market.id}`}>
       <Card hover className="p-5 relative overflow-hidden">
-        {/* Lightning accent */}
+        {/* Eclipse accent */}
         <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500" />
 
         <div className="flex items-start justify-between mb-3">
@@ -28,7 +28,7 @@ export default function LightningCard({ market }: LightningCardProps) {
             <div className="w-8 h-8 rounded-lg bg-amber-400/10 flex items-center justify-center">
               <BoltIcon className="w-4 h-4 text-amber-400" />
             </div>
-            <Badge variant="warning">Lightning</Badge>
+            <Badge variant="warning">Eclipse</Badge>
           </div>
           <div className={`flex items-center gap-1 text-xs font-mono ${
             isUrgent ? 'text-accent-red animate-pulse' : 'text-amber-400'
@@ -80,3 +80,4 @@ export default function LightningCard({ market }: LightningCardProps) {
     </Link>
   );
 }
+

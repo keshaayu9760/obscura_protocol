@@ -1,12 +1,12 @@
 import { useCountdown } from '@/hooks/useCountdown';
 import { BoltIcon } from '@/components/icons';
 
-interface LightningTimerProps {
+interface EclipseTimerProps {
   endTime: number;
   compact?: boolean;
 }
 
-export default function LightningTimer({ endTime, compact = false }: LightningTimerProps) {
+export default function EclipseTimer({ endTime, compact = false }: EclipseTimerProps) {
   const { days, hours, minutes, seconds } = useCountdown(endTime);
   const isExpired = days === 0 && hours === 0 && minutes === 0 && seconds === 0;
   const isUrgent = days === 0 && hours === 0 && minutes < 5;
@@ -58,3 +58,4 @@ function TimeUnit({ value, label, urgent }: { value: number; label: string; urge
     </div>
   );
 }
+

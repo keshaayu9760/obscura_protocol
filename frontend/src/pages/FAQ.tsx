@@ -6,19 +6,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 const faqs = [
   {
     q: 'What tokens can I trade with?',
-    a: 'Veil Strike v6 supports three tokens: ALEO (native Aleo credits), USDCx (USD-pegged stablecoin), and USAD (algorithmic stablecoin). Each token runs on its own dedicated Leo smart contract — veil_strike_v6.aleo, veil_strike_v6_cx.aleo, and veil_strike_v6_sd.aleo respectively.',
+    a: 'Obscura Protocol v7 supports three tokens: ALEO (native Aleo credits), USDCx (USD-pegged stablecoin), and USAD (algorithmic stablecoin). Each token runs on its own dedicated Leo smart contract — obscura_protocol_v7.aleo, obscura_protocol_v7_cx.aleo, and obscura_protocol_v7_sd.aleo respectively.',
   },
   {
-    q: 'What is Veil Strike?',
-    a: 'Veil Strike is a privacy-first prediction market protocol on the Aleo blockchain. Using zero-knowledge proofs, it keeps trader identities, position sizes, and payouts fully encrypted on-chain. Supports event prediction markets and Strike Rounds across 3 token types.',
+    q: 'What is Obscura Protocol?',
+    a: 'Obscura Protocol is a privacy-first prediction market protocol on the Aleo blockchain. Using zero-knowledge proofs, it keeps trader identities, position sizes, and payouts fully encrypted on-chain. Supports event prediction markets and Eclipse Rounds across 3 token types.',
   },
   {
     q: 'How does governance work?',
     a: 'Any user can submit governance proposals: approve resolvers, request treasury withdrawals, update fees, or override markets. Others vote for or against. Governance is live on-chain via submit_proposal and cast_vote transitions but is still evolving — more voting mechanisms, quorum rules, and timelock controls are planned.',
   },
   {
-    q: 'What are Strike Rounds?',
-    a: 'Strike Rounds are 15-minute price prediction markets where you bet UP or DOWN on crypto prices (BTC, ETH, ALEO). The Round Bot automatically creates 3 concurrent markets every 15 minutes using delegated proving. After the timer expires, it compares oracle start vs end price and calls flash_settle on-chain — all markets are settled, even empty ones. Your position and payout are fully private via ZK proofs.',
+    q: 'What are Eclipse Rounds?',
+    a: 'Eclipse Rounds are 15-minute price prediction markets where you bet UP or DOWN on crypto prices (BTC, ETH, ALEO). The Round Bot automatically creates 3 concurrent markets every 15 minutes using delegated proving. After the timer expires, it compares oracle start vs end price and calls flash_settle on-chain — all markets are settled, even empty ones. Your position and payout are fully private via ZK proofs.',
   },
   {
     q: 'How is privacy maintained?',
@@ -30,7 +30,7 @@ const faqs = [
   },
   {
     q: 'Is this on mainnet?',
-    a: 'Veil Strike is currently deployed on Aleo testnet (Wave 4). All tokens are testnet tokens with no real-world value. Mainnet deployment is planned after governance and privacy improvements are finalized.',
+    a: 'Obscura Protocol is currently targeted at Aleo testnet. All tokens are testnet tokens with no real-world value. Mainnet deployment is planned after governance and privacy improvements are finalized.',
   },
   {
     q: 'How do I provide liquidity?',
@@ -38,19 +38,19 @@ const faqs = [
   },
   {
     q: 'What happens if I disagree with a market resolution?',
-    a: 'You can contest an event market resolution within the 12-hour challenge window using contest_verdict. A minimum 5 ALEO bond is required. If the market is re-resolved in your favor, you recover the bond. Strike Rounds resolved via flash_settle bypass the challenge window by design.',
+    a: 'You can contest an event market resolution within the 12-hour challenge window using contest_verdict. A minimum 5 ALEO bond is required. If the market is re-resolved in your favor, you recover the bond. Eclipse Rounds resolved via flash_settle bypass the challenge window by design.',
   },
   {
     q: 'Can I create my own market?',
-    a: 'Yes! Go to the Create page to set up an event market with your question, outcomes, deadline, and initial liquidity. The market is created on-chain and appears in the list once confirmed by the indexer. Strike Rounds are created automatically by the Round Bot every 15 minutes.',
+    a: 'Yes! Go to the Create page to set up an event market with your question, outcomes, deadline, and initial liquidity. The market is created on-chain and appears in the list once confirmed by the indexer. Eclipse Rounds are created automatically by the Round Bot every 15 minutes.',
   },
   {
     q: 'How does resolution work?',
-    a: 'Strike Rounds are auto-resolved by the Round Bot every 15 minutes. The bot compares oracle start vs end prices and calls flash_settle on-chain via delegated proving (~30s). All rounds are settled on-chain — including empty ones to keep state clean. Admin can also manually resolve via the Admin page. For event markets, the resolver calls render_verdict then ratify_verdict after a 12-hour challenge window.',
+    a: 'Eclipse Rounds are auto-resolved by the Round Bot every 15 minutes. The bot compares oracle start vs end prices and calls flash_settle on-chain via delegated proving (~30s). All rounds are settled on-chain — including empty ones to keep state clean. Admin can also manually resolve via the Admin page. For event markets, the resolver calls render_verdict then ratify_verdict after a 12-hour challenge window.',
   },
   {
     q: 'How do I get started?',
-    a: 'Install the Shield Wallet browser extension, connect to Aleo testnet, get testnet ALEO from the faucet, then navigate to Markets for event predictions or Rounds for Strike Rounds.',
+    a: 'Install the Shield Wallet browser extension, connect to Aleo testnet, get testnet ALEO from the faucet, then navigate to Markets for event predictions or Rounds for Eclipse Rounds.',
   },
 ];
 
@@ -59,7 +59,7 @@ export default function FAQ() {
 
   return (
     <div>
-      <PageHeader title="FAQ" subtitle="Frequently asked questions about Veil Strike" />
+      <PageHeader title="Briefing" subtitle="Common questions about the Obscura interface, settlement model, and live operating surface." />
       <div className="max-w-3xl space-y-2">
         {faqs.map((faq, idx) => (
           <Card key={idx} className="overflow-hidden">

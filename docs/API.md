@@ -20,7 +20,7 @@ GET /api/health
   "status": "ok",
   "timestamp": 1705000000000,
   "version": "1.0.0",
-  "program": "veil_strike_v4.aleo"
+  "program": "obscura_protocol_v7.aleo"
 }
 ```
 
@@ -50,7 +50,7 @@ GET /api/markets
       "status": "active",
       "endTime": 1720000000000,
       "createdAt": 1705000000000,
-      "isLightning": false
+      "isEclipse": false
     }
   ]
 }
@@ -174,3 +174,4 @@ All timestamps are in **milliseconds since Unix epoch**.
 ### Categories
 
 `crypto`, `defi`, `politics`, `sports`, `entertainment`, `science`, `other`
+

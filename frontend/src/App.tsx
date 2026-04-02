@@ -15,13 +15,14 @@ import RiskDisclosure from '@/pages/RiskDisclosure';
 import Privacy from '@/pages/Privacy';
 import FAQ from '@/pages/FAQ';
 import Admin from '@/pages/Admin';
+import Eclipse from '@/pages/Eclipse';
 
 export default function App() {
   return (
     <WalletProvider>
       <Routes>
-        <Route path="/" element={<Landing />} />
         <Route element={<MainLayout />}>
+          <Route path="/" element={<Landing />} />
           <Route path="/markets" element={<Markets />} />
           <Route path="/markets/:id" element={<MarketDetail />} />
           <Route path="/rounds" element={<Rounds />} />
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/eclipse" element={<Eclipse />} />
         </Route>
       </Routes>
     </WalletProvider>

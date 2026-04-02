@@ -25,7 +25,7 @@ router.post('/refresh', async (_req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const { marketId, question, outcomes, isLightning, tokenType, imageUrl } = req.body;
+  const { marketId, question, outcomes, isEclipse, tokenType, imageUrl } = req.body;
   if (!marketId || !question || !Array.isArray(outcomes) || outcomes.length < 2) {
     res.status(400).json({ error: 'marketId, question, and outcomes (array) required' });
     return;
@@ -34,7 +34,7 @@ router.post('/register', async (req, res) => {
     questionHash: '',
     question,
     outcomes,
-    isLightning: isLightning || false,
+    isEclipse: isEclipse || false,
     tokenType: tokenType || undefined,
     imageUrl: imageUrl || undefined,
   });
@@ -43,7 +43,7 @@ router.post('/register', async (req, res) => {
     updateMarketMeta(marketId, {
       question,
       outcomes,
-      isLightning: isLightning || false,
+      isEclipse: isEclipse || false,
       tokenType: tokenType || undefined,
       imageUrl: imageUrl || undefined,
     });
@@ -58,7 +58,7 @@ router.post('/register', async (req, res) => {
 // Frontend sends question text + hash so the scanner can populate the
 // market's metadata when it discovers the market_id on-chain.
 router.post('/pending', (req, res) => {
-  const { questionHash, question, outcomes, isLightning } = req.body;
+  const { questionHash, question, outcomes, isEclipse } = req.body;
   if (!questionHash || !question) {
     res.status(400).json({ error: 'questionHash and question required' });
     return;
@@ -66,10 +66,11 @@ router.post('/pending', (req, res) => {
   savePendingMeta(questionHash, {
     question,
     outcomes: Array.isArray(outcomes) ? outcomes : ['Yes', 'No'],
-    isLightning: isLightning || false,
+    isEclipse: isEclipse || false,
     createdAt: Date.now(),
   });
   res.json({ success: true });
 });
 
 export default router;
+

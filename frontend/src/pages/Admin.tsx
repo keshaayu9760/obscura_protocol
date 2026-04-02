@@ -16,7 +16,7 @@ interface AdminMarket {
   question: string;
   status: string;
   tokenType?: string;
-  isLightning: boolean;
+  isEclipse: boolean;
   totalVolume: number;
   reserves: number[];
 }
@@ -29,7 +29,7 @@ interface ConfirmState {
   label: string;
 }
 
-interface LightningOracleData {
+interface EclipseOracleData {
   result: 'up' | 'down' | null;
   startPrice: number;
   endPrice: number | null;
@@ -69,12 +69,12 @@ export default function Admin() {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [lightningResults, setLightningResults] = useState<Map<string, LightningOracleData>>(new Map());
+  const [eclipseResults, setEclipseResults] = useState<Map<string, EclipseOracleData>>(new Map());
   const [botStatus, setBotStatus] = useState<BotStatus | null>(null);
 
-  const fetchLightningResults = useCallback(async () => {
+  const fetchEclipseResults = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/lightning`);
+      const res = await fetch(`${API_BASE}/eclipse`);
       const data = await res.json() as {
         rounds?: Array<{
           result: 'up' | 'down' | null;
@@ -84,7 +84,7 @@ export default function Admin() {
           markets?: Record<string, { marketId?: string }>;
         }>;
       };
-      const map = new Map<string, LightningOracleData>();
+      const map = new Map<string, EclipseOracleData>();
       for (const round of data.rounds ?? []) {
         for (const assignment of Object.values(round.markets ?? {})) {
           if (assignment?.marketId) {
@@ -97,7 +97,7 @@ export default function Admin() {
           }
         }
       }
-      setLightningResults(map);
+      setEclipseResults(map);
     } catch {
       // backend may be offline
     }
@@ -105,7 +105,7 @@ export default function Admin() {
 
   const fetchBotStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/lightning/bot/status`);
+      const res = await fetch(`${API_BASE}/eclipse/bot/status`);
       if (res.ok) setBotStatus(await res.json());
     } catch { /* backend may be offline */ }
   }, []);
@@ -115,21 +115,21 @@ export default function Admin() {
       setLoading(true);
       fetchMarkets().finally(() => setLoading(false));
     }
-    void fetchLightningResults();
+    void fetchEclipseResults();
     void fetchBotStatus();
     const botInterval = setInterval(fetchBotStatus, 10_000);
     return () => clearInterval(botInterval);
-  }, [markets.length, fetchMarkets, fetchLightningResults, fetchBotStatus]);
+  }, [markets.length, fetchMarkets, fetchEclipseResults, fetchBotStatus]);
 
   const handleRefresh = useCallback(async () => {
     setLoading(true);
-    await Promise.all([fetchMarkets(), fetchLightningResults(), fetchBotStatus()]);
+    await Promise.all([fetchMarkets(), fetchEclipseResults(), fetchBotStatus()]);
     setLoading(false);
-  }, [fetchMarkets, fetchLightningResults, fetchBotStatus]);
+  }, [fetchMarkets, fetchEclipseResults, fetchBotStatus]);
 
   const isDeployer = connected && address === DEPLOYER;
 
-  // Show all active markets (lightning and non-lightning)
+  // Show all active markets (Eclipse and non-Eclipse)
   // Filter out locally-resolved markets so they move to the resolved section immediately
   const activeMarkets: AdminMarket[] = markets
     .filter((m) => (m.status === 'active' || m.status === 'closed') && !resolvedIds.has(m.id))
@@ -138,7 +138,7 @@ export default function Admin() {
       question: m.question,
       status: m.status,
       tokenType: m.tokenType,
-      isLightning: m.isLightning,
+      isEclipse: m.isEclipse,
       totalVolume: m.totalVolume,
       reserves: m.reserves,
     }));
@@ -147,13 +147,13 @@ export default function Admin() {
 
   const handleResolve = async (marketId: string, winningOutcome: number, tokenType: string) => {
     setConfirm(null);
-    const isLightning = markets.find((m) => m.id === marketId)?.isLightning;
+    const isEclipse = markets.find((m) => m.id === marketId)?.isEclipse;
     const tx = buildFlashSettleTx(marketId, winningOutcome, (tokenType || 'ALEO') as TokenType);
     const txId = await execute(tx, () => {
       setResolvedIds((prev) => new Set(prev).add(marketId));
-      // If lightning market, trigger backend to create a replacement market
-      if (isLightning) {
-        fetch(`${API_BASE}/lightning/admin/create-replacement`, {
+      // If Eclipse market, trigger backend to create a replacement market
+      if (isEclipse) {
+        fetch(`${API_BASE}/eclipse/admin/create-replacement`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ marketId, tokenType: tokenType || 'ALEO' }),
@@ -169,9 +169,9 @@ export default function Admin() {
   if (!connected) {
     return (
       <div className="min-h-screen pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-        <PageHeader title="Admin" subtitle="Connect your wallet to continue" />
+        <PageHeader title="Control Room" subtitle="Wallet session required" />
         <Card className="p-8 text-center">
-          <p className="text-smoke/60 text-lg">Please connect your wallet.</p>
+          <p className="text-smoke/60 text-lg">Link the operator wallet to continue.</p>
         </Card>
       </div>
     );
@@ -180,10 +180,10 @@ export default function Admin() {
   if (!isDeployer) {
     return (
       <div className="min-h-screen pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto">
-        <PageHeader title="Admin" subtitle="Access restricted" />
+        <PageHeader title="Control Room" subtitle="Restricted operator surface" />
         <Card className="p-8 text-center space-y-3">
-          <p className="text-accent-red text-lg font-heading font-bold">Access Denied</p>
-          <p className="text-smoke/60 text-sm">This page is only available to the protocol deployer.</p>
+          <p className="text-accent-red text-lg font-heading font-bold">Operator access denied</p>
+          <p className="text-smoke/60 text-sm">This surface is only available to the protocol deployer.</p>
           <p className="text-smoke/30 text-xs font-mono break-all">Your address: {address}</p>
         </Card>
       </div>
@@ -195,8 +195,8 @@ export default function Admin() {
   return (
     <div className="min-h-screen pt-28 pb-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
       <PageHeader
-        title="Admin — Resolve Markets"
-        subtitle="Resolve markets on-chain via your wallet so winners can claim 1:1"
+        title="Control Room"
+        subtitle="Operator tools for settlement, round supervision, and resolver actions."
       />
 
       <div className="flex items-center gap-3 mb-6">
@@ -274,7 +274,7 @@ export default function Admin() {
         {activeMarkets.map((market, i) => {
           const justResolved = resolvedIds.has(market.id);
           const tokenType = market.tokenType || 'ALEO';
-          const oracleData = market.isLightning ? lightningResults.get(market.id) : undefined;
+          const oracleData = market.isEclipse ? eclipseResults.get(market.id) : undefined;
 
           return (
             <motion.div
@@ -293,7 +293,7 @@ export default function Admin() {
                       <Badge variant={tokenType === 'ALEO' ? 'teal' : tokenType === 'USDCX' ? 'info' : 'warning'}>
                         {tokenType}
                       </Badge>
-                      {market.isLightning && <Badge variant="warning">Lightning</Badge>}
+                      {market.isEclipse && <Badge variant="warning">Eclipse</Badge>}
                       <Badge variant={market.status === 'active' ? 'green' : 'gray'}>
                         {market.status}
                       </Badge>
@@ -308,8 +308,8 @@ export default function Admin() {
                       </p>
                     )}
 
-                    {/* Oracle result indicator for lightning markets */}
-                    {market.isLightning && oracleData && (
+                    {/* Oracle result indicator for Eclipse markets */}
+                    {market.isEclipse && oracleData && (
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-smoke/40 text-xs">
                           ${oracleData.startPrice.toLocaleString()} →{' '}
@@ -410,7 +410,7 @@ export default function Admin() {
         <h3 className="font-heading font-bold text-white mb-3">How it works</h3>
         <ul className="space-y-2 text-smoke/70 text-sm">
           <li>
-            <span className="text-teal font-medium">Auto:</span> The <strong className="text-white">Round Bot</strong> automatically creates, monitors, and resolves Strike Rounds using delegated proving (~30s per tx). Empty rounds are skipped at zero cost.
+            <span className="text-teal font-medium">Auto:</span> The <strong className="text-white">Round Bot</strong> automatically creates, monitors, and resolves Eclipse Rounds using delegated proving (~30s per tx). Empty rounds are skipped at zero cost.
           </li>
           <li>
             <span className="text-teal font-medium">Manual:</span> Click <strong className="text-white">Resolve UP</strong> or <strong className="text-white">Resolve DOWN</strong> to resolve any active market manually via your wallet's <code className="text-orange/80">flash_settle</code>.
@@ -452,7 +452,7 @@ export default function Admin() {
               </p>
               {/* Oracle guidance in modal */}
               {(() => {
-                const od = lightningResults.get(confirm.marketId);
+                const od = eclipseResults.get(confirm.marketId);
                 if (!od) return null;
                 const matchesOracle =
                   (confirm.winningOutcome === 1 && od.result === 'up') ||
@@ -501,3 +501,4 @@ export default function Admin() {
     </div>
   );
 }
+

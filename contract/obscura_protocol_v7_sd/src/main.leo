@@ -1,21 +1,21 @@
 // ============================================================================
-// VEIL STRIKE v6 CX — USDCx Stablecoin Prediction Market Module
+// OBSCURA PROTOCOL v7 SD — USAD Stablecoin Prediction Market Module
 // ============================================================================
-// USDCx-native markets with full FPMM AMM, dispute system, lightning rounds.
-// Companion to veil_strike_v6.aleo (ALEO main + governance).
+// USAD-native markets with full FPMM AMM, dispute system, and Eclipse rounds.
+// Companion to obscura_protocol_v7.aleo (ALEO main + governance).
 //
 // PRIVACY MODEL:
 //   - Buy: transfer_private_to_public hides sender identity
 //   - Sell/Redeem/Refund: transfer_public_to_private hides recipient
 //   - Dispute bonds use ALEO credits for universal compatibility
 //
-// 15 transitions
+// 17 transitions
 // ============================================================================
 
 import credits.aleo;
-import test_usdcx_stablecoin.aleo;
+import test_usad_stablecoin.aleo;
 
-program veil_strike_v6_cx.aleo {
+program obscura_protocol_v7_sd.aleo {
 
     // ========================================================================
     // CONSTANTS
@@ -34,11 +34,12 @@ program veil_strike_v6_cx.aleo {
     const STATUS_CANCELLED: u8 = 4u8;
     const STATUS_PENDING_RESOLUTION: u8 = 5u8;
 
-    const TOKEN_USDCX: u8 = 1u8;
+    const TOKEN_USAD: u8 = 2u8;
     const CHALLENGE_WINDOW: u32 = 2880u32;
     const MIN_TRADE_AMOUNT: u128 = 10_000u128;
     const MIN_LIQUIDITY: u128 = 1_000_000u128;
     const MIN_DISPUTE_BOND: u128 = 5_000_000u128;
+    const PAUSE_KEY: u8 = 0u8;
 
     // ========================================================================
     // RECORDS
@@ -157,12 +158,14 @@ program veil_strike_v6_cx.aleo {
     mapping program_credits: u8 => u128;
     mapping market_credits: field => u128;
     mapping lp_positions: field => bool;
+    mapping protocol_paused: u8 => bool;
+    mapping market_dossiers: field => field;
 
     @noupgrade
     async constructor() {}
 
     // ========================================================================
-    // 1. CREATE MARKET (USDCX)
+    // 1. CREATE MARKET (USAD)
     // ========================================================================
 
     async transition open_market(
@@ -174,11 +177,13 @@ program veil_strike_v6_cx.aleo {
         public resolver: address,
         private initial_liquidity: u128,
         private nonce: field,
-        private token_in: test_usdcx_stablecoin.aleo/Token,
+        private token_in: test_usad_stablecoin.aleo/Token,
         private proofs: [MerkleProof; 2],
-    ) -> (field, LPToken, test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, Future) {
+    ) -> (field, LPToken, test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(num_outcomes >= 2u8 && num_outcomes <= 4u8);
         assert(initial_liquidity >= MIN_LIQUIDITY);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let market_id: field = BHP256::hash_to_field(
             MarketSeed { creator: self.signer, question_hash: question_hash, nonce: nonce }
@@ -188,19 +193,19 @@ program veil_strike_v6_cx.aleo {
         });
         let lp_token: LPToken = LPToken {
             owner: self.signer, market_id: market_id, lp_shares: initial_liquidity,
-            lp_nonce: lp_nonce, token_type: TOKEN_USDCX,
+            lp_nonce: lp_nonce, token_type: TOKEN_USAD,
         };
 
         let (compliance_rec, change_token, transfer_future): (
-            test_usdcx_stablecoin.aleo/ComplianceRecord,
-            test_usdcx_stablecoin.aleo/Token, Future
-        ) = test_usdcx_stablecoin.aleo/transfer_private_to_public(
+            test_usad_stablecoin.aleo/ComplianceRecord,
+            test_usad_stablecoin.aleo/Token, Future
+        ) = test_usad_stablecoin.aleo/transfer_private_to_public(
             self.address, initial_liquidity, token_in, proofs
         );
 
         return (market_id, lp_token, compliance_rec, change_token, open_market_finalize(
             transfer_future, market_id, self.signer, question_hash, category,
-            num_outcomes, deadline, resolution_deadline, resolver, initial_liquidity, TOKEN_USDCX
+            num_outcomes, deadline, resolution_deadline, resolver, initial_liquidity, TOKEN_USAD
         ));
     }
 
@@ -239,33 +244,35 @@ program veil_strike_v6_cx.aleo {
     }
 
     // ========================================================================
-    // 2. BUY SHARES (USDCX)
+    // 2. BUY SHARES (USAD)
     // ========================================================================
 
     async transition acquire_shares(
         private market_id: field, private outcome: u8, private amount_in: u128,
         private expected_shares: u128, private min_shares_out: u128,
         private share_nonce: field,
-        private token_in: test_usdcx_stablecoin.aleo/Token,
+        private token_in: test_usad_stablecoin.aleo/Token,
         private proofs: [MerkleProof; 2],
-    ) -> (OutcomeShare, test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, Future) {
+    ) -> (OutcomeShare, test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(outcome >= 1u8 && outcome <= 4u8);
         assert(amount_in >= MIN_TRADE_AMOUNT);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let share: OutcomeShare = OutcomeShare {
             owner: self.signer, market_id: market_id, outcome: outcome,
-            quantity: expected_shares, share_nonce: share_nonce, token_type: TOKEN_USDCX,
+            quantity: expected_shares, share_nonce: share_nonce, token_type: TOKEN_USAD,
         };
 
         let (compliance_rec, change_token, transfer_future): (
-            test_usdcx_stablecoin.aleo/ComplianceRecord,
-            test_usdcx_stablecoin.aleo/Token, Future
-        ) = test_usdcx_stablecoin.aleo/transfer_private_to_public(
+            test_usad_stablecoin.aleo/ComplianceRecord,
+            test_usad_stablecoin.aleo/Token, Future
+        ) = test_usad_stablecoin.aleo/transfer_private_to_public(
             self.address, amount_in, token_in, proofs
         );
 
         return (share, compliance_rec, change_token, acquire_shares_finalize(
-            transfer_future, market_id, outcome, amount_in, expected_shares, min_shares_out, TOKEN_USDCX
+            transfer_future, market_id, outcome, amount_in, expected_shares, min_shares_out, TOKEN_USAD
         ));
     }
 
@@ -331,17 +338,19 @@ program veil_strike_v6_cx.aleo {
     }
 
     // ========================================================================
-    // 3. SELL SHARES (USDCX)
+    // 3. SELL SHARES (USAD)
     // ========================================================================
 
     async transition dispose_shares(
         private shares: OutcomeShare, private tokens_desired: u128, private max_shares_used: u128,
-    ) -> (OutcomeShare, test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, Future) {
+    ) -> (OutcomeShare, test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(shares.owner == self.signer);
-        assert(shares.token_type == TOKEN_USDCX);
+        assert(shares.token_type == TOKEN_USAD);
         assert(tokens_desired >= MIN_TRADE_AMOUNT);
         assert(max_shares_used > 0u128);
         assert(max_shares_used <= shares.quantity);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
 
         let protocol_fee: u128 = (tokens_desired * PROTOCOL_FEE_BPS) / FEE_DENOMINATOR;
         let creator_fee: u128 = (tokens_desired * CREATOR_FEE_BPS) / FEE_DENOMINATOR;
@@ -349,19 +358,19 @@ program veil_strike_v6_cx.aleo {
         let net_tokens: u128 = tokens_desired - protocol_fee - creator_fee - lp_fee;
 
         let (compliance_rec, payout_token, transfer_future): (
-            test_usdcx_stablecoin.aleo/ComplianceRecord,
-            test_usdcx_stablecoin.aleo/Token, Future
-        ) = test_usdcx_stablecoin.aleo/transfer_public_to_private(self.signer, net_tokens);
+            test_usad_stablecoin.aleo/ComplianceRecord,
+            test_usad_stablecoin.aleo/Token, Future
+        ) = test_usad_stablecoin.aleo/transfer_public_to_private(self.signer, net_tokens);
 
         let remainder: OutcomeShare = OutcomeShare {
             owner: self.signer, market_id: shares.market_id, outcome: shares.outcome,
             quantity: shares.quantity - max_shares_used, share_nonce: shares.share_nonce,
-            token_type: TOKEN_USDCX,
+            token_type: TOKEN_USAD,
         };
 
         return (remainder, compliance_rec, payout_token, dispose_shares_finalize(
             transfer_future, shares.market_id, shares.outcome,
-            tokens_desired, max_shares_used, TOKEN_USDCX
+            tokens_desired, max_shares_used, TOKEN_USAD
         ));
     }
 
@@ -453,28 +462,30 @@ program veil_strike_v6_cx.aleo {
     }
 
     // ========================================================================
-    // 4. ADD LIQUIDITY (USDCX)
+    // 4. ADD LIQUIDITY (USAD)
     // ========================================================================
 
     async transition fund_pool(
         private market_id: field, private amount: u128,
         private expected_lp_shares: u128, private lp_nonce: field,
-        private token_in: test_usdcx_stablecoin.aleo/Token,
+        private token_in: test_usad_stablecoin.aleo/Token,
         private proofs: [MerkleProof; 2],
-    ) -> (LPToken, test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, Future) {
+    ) -> (LPToken, test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(amount >= MIN_LIQUIDITY);
+        let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
+        assert(!protocol_locked);
         let lp_token: LPToken = LPToken {
             owner: self.signer, market_id: market_id, lp_shares: expected_lp_shares,
-            lp_nonce: lp_nonce, token_type: TOKEN_USDCX,
+            lp_nonce: lp_nonce, token_type: TOKEN_USAD,
         };
         let (compliance_rec, change_token, transfer_future): (
-            test_usdcx_stablecoin.aleo/ComplianceRecord,
-            test_usdcx_stablecoin.aleo/Token, Future
-        ) = test_usdcx_stablecoin.aleo/transfer_private_to_public(
+            test_usad_stablecoin.aleo/ComplianceRecord,
+            test_usad_stablecoin.aleo/Token, Future
+        ) = test_usad_stablecoin.aleo/transfer_private_to_public(
             self.address, amount, token_in, proofs
         );
         return (lp_token, compliance_rec, change_token, fund_pool_finalize(
-            transfer_future, market_id, amount, expected_lp_shares, TOKEN_USDCX
+            transfer_future, market_id, amount, expected_lp_shares, TOKEN_USAD
         ));
     }
 
@@ -623,7 +634,7 @@ program veil_strike_v6_cx.aleo {
     }
 
     // ========================================================================
-    // 9. LIGHTNING SETTLE
+    // 9. ECLIPSE SETTLE
     // ========================================================================
 
     async transition flash_settle(public market_id: field, public winning_outcome: u8) -> Future {
@@ -727,24 +738,24 @@ program veil_strike_v6_cx.aleo {
     }
 
     // ========================================================================
-    // 12. REDEEM WINNING SHARES (USDCX)
+    // 12. REDEEM WINNING SHARES (USAD)
     // ========================================================================
 
     async transition harvest_winnings(
         private shares: OutcomeShare,
-    ) -> (test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, Future) {
+    ) -> (test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(shares.owner == self.signer);
-        assert(shares.token_type == TOKEN_USDCX);
+        assert(shares.token_type == TOKEN_USAD);
         assert(shares.quantity > 0u128);
         let claim_key: field = BHP256::hash_to_field(ShareClaimKey {
             market_id: shares.market_id, claimer: self.signer, share_nonce: shares.share_nonce,
         });
         let (compliance_rec, payout_token, transfer_future): (
-            test_usdcx_stablecoin.aleo/ComplianceRecord,
-            test_usdcx_stablecoin.aleo/Token, Future
-        ) = test_usdcx_stablecoin.aleo/transfer_public_to_private(self.signer, shares.quantity);
+            test_usad_stablecoin.aleo/ComplianceRecord,
+            test_usad_stablecoin.aleo/Token, Future
+        ) = test_usad_stablecoin.aleo/transfer_public_to_private(self.signer, shares.quantity);
         return (compliance_rec, payout_token, harvest_winnings_finalize(
-            transfer_future, claim_key, shares.market_id, shares.outcome, shares.quantity, TOKEN_USDCX
+            transfer_future, claim_key, shares.market_id, shares.outcome, shares.quantity, TOKEN_USAD
         ));
     }
 
@@ -771,28 +782,28 @@ program veil_strike_v6_cx.aleo {
     }
 
     // ========================================================================
-    // 13. CLAIM REFUND (USDCX)
+    // 13. CLAIM REFUND (USAD)
     // ========================================================================
 
     async transition harvest_refund(
         private shares: OutcomeShare,
-    ) -> (RefundClaim, test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, Future) {
+    ) -> (RefundClaim, test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(shares.owner == self.signer);
-        assert(shares.token_type == TOKEN_USDCX);
+        assert(shares.token_type == TOKEN_USAD);
         assert(shares.quantity > 0u128);
         let claim_key: field = BHP256::hash_to_field(ShareClaimKey {
             market_id: shares.market_id, claimer: self.signer, share_nonce: shares.share_nonce,
         });
         let refund: RefundClaim = RefundClaim {
             owner: self.signer, market_id: shares.market_id, amount: shares.quantity,
-            claim_nonce: shares.share_nonce, token_type: TOKEN_USDCX,
+            claim_nonce: shares.share_nonce, token_type: TOKEN_USAD,
         };
         let (compliance_rec, payout_token, transfer_future): (
-            test_usdcx_stablecoin.aleo/ComplianceRecord,
-            test_usdcx_stablecoin.aleo/Token, Future
-        ) = test_usdcx_stablecoin.aleo/transfer_public_to_private(self.signer, shares.quantity);
+            test_usad_stablecoin.aleo/ComplianceRecord,
+            test_usad_stablecoin.aleo/Token, Future
+        ) = test_usad_stablecoin.aleo/transfer_public_to_private(self.signer, shares.quantity);
         return (refund, compliance_rec, payout_token, harvest_refund_finalize(
-            transfer_future, claim_key, shares.market_id, shares.quantity, TOKEN_USDCX
+            transfer_future, claim_key, shares.market_id, shares.quantity, TOKEN_USAD
         ));
     }
 
@@ -816,25 +827,25 @@ program veil_strike_v6_cx.aleo {
     }
 
     // ========================================================================
-    // 14. WITHDRAW LP (USDCX)
+    // 14. WITHDRAW LP (USAD)
     // ========================================================================
 
     async transition withdraw_pool(
         private lp_token: LPToken, private min_tokens_out: u128,
-    ) -> (test_usdcx_stablecoin.aleo/ComplianceRecord, test_usdcx_stablecoin.aleo/Token, Future) {
+    ) -> (test_usad_stablecoin.aleo/ComplianceRecord, test_usad_stablecoin.aleo/Token, Future) {
         assert(lp_token.owner == self.signer);
-        assert(lp_token.token_type == TOKEN_USDCX);
+        assert(lp_token.token_type == TOKEN_USAD);
         assert(lp_token.lp_shares > 0u128);
         assert(min_tokens_out > 0u128);
         let claim_key: field = BHP256::hash_to_field(LPClaimKey {
             market_id: lp_token.market_id, claimer: self.signer, lp_nonce: lp_token.lp_nonce,
         });
         let (compliance_rec, payout_token, transfer_future): (
-            test_usdcx_stablecoin.aleo/ComplianceRecord,
-            test_usdcx_stablecoin.aleo/Token, Future
-        ) = test_usdcx_stablecoin.aleo/transfer_public_to_private(self.signer, min_tokens_out);
+            test_usad_stablecoin.aleo/ComplianceRecord,
+            test_usad_stablecoin.aleo/Token, Future
+        ) = test_usad_stablecoin.aleo/transfer_public_to_private(self.signer, min_tokens_out);
         return (compliance_rec, payout_token, withdraw_pool_finalize(
-            transfer_future, claim_key, lp_token.market_id, lp_token.lp_shares, min_tokens_out, TOKEN_USDCX
+            transfer_future, claim_key, lp_token.market_id, lp_token.lp_shares, min_tokens_out, TOKEN_USAD
         ));
     }
 
@@ -875,12 +886,12 @@ program veil_strike_v6_cx.aleo {
     }
 
     // ========================================================================
-    // 15. WITHDRAW CREATOR FEES (USDCX)
+    // 15. WITHDRAW CREATOR FEES (USAD)
     // ========================================================================
 
     async transition harvest_fees(public market_id: field, public expected_amount: u128) -> Future {
         assert(expected_amount > 0u128);
-        let transfer_future: Future = test_usdcx_stablecoin.aleo/transfer_public(self.signer, expected_amount);
+        let transfer_future: Future = test_usad_stablecoin.aleo/transfer_public(self.signer, expected_amount);
         return harvest_fees_finalize(transfer_future, market_id, self.signer, expected_amount);
     }
 
@@ -906,4 +917,32 @@ program veil_strike_v6_cx.aleo {
         assert(current_held >= expected_amount);
         program_credits.set(token_type, current_held - expected_amount);
     }
+
+    // ========================================================================
+    // 16. SET PROTOCOL PAUSE (USAD)
+    // ========================================================================
+
+    async transition set_protocol_pause(public paused: bool) -> Future {
+        return set_protocol_pause_finalize(self.signer, paused);
+    }
+
+    async function set_protocol_pause_finalize(caller: address, paused: bool) {
+        assert(caller == DEPLOYER);
+        protocol_paused.set(PAUSE_KEY, paused);
+    }
+
+    // ========================================================================
+    // 17. PIN MARKET DOSSIER (USAD)
+    // ========================================================================
+
+    async transition pin_market_dossier(public market_id: field, public dossier_hash: field) -> Future {
+        return pin_market_dossier_finalize(market_id, dossier_hash, self.signer);
+    }
+
+    async function pin_market_dossier_finalize(market_id: field, dossier_hash: field, caller: address) {
+        let market: Market = markets.get(market_id);
+        assert(caller == market.creator || caller == market.resolver || caller == DEPLOYER);
+        market_dossiers.set(market_id, dossier_hash);
+    }
 }
+

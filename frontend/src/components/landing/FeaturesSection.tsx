@@ -9,7 +9,7 @@ const features = [
   },
   {
     icon: <BoltIcon className="w-7 h-7" />,
-    title: 'Strike Rounds',
+    title: 'Eclipse Rounds',
     description: '15-minute auto-resolved price predictions on BTC, ETH, and ALEO. The Round Bot creates, settles, and repeats every cycle — all via delegated proving with full ZK privacy.',
   },
   {
