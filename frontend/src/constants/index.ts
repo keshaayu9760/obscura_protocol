@@ -2,9 +2,9 @@
 // Obscura Protocol — Application constants
 // ============================================================================
 
-export const PROGRAM_ID = 'obscura_v2.0.aleo';
-export const PROGRAM_ID_CX = 'obscura_v2.0_cx.aleo';
-export const PROGRAM_ID_SD = 'obscura_v2.0_sd.aleo';
+export const PROGRAM_ID = 'obscura_v2_0.aleo';
+export const PROGRAM_ID_CX = 'obscura_v2_0_cx.aleo';
+export const PROGRAM_ID_SD = 'obscura_v2_0_sd.aleo';
 
 export const ALEO_TESTNET_API = 'https://api.explorer.provable.com/v1/testnet';
 

@@ -1,7 +1,7 @@
 {
-    "program": "obscura_v2.0_cx.aleo",
+    "program": "obscura_v2_0_sd.aleo",
     "version": "2.0.0",
-    "description": "Obscura Protocol v2.0 CX — USDCx stablecoin prediction market module with oracle integration",
+    "description": "Obscura Protocol v2.0 SD — USAD stablecoin prediction market module with oracle integration",
     "license": "MIT",
     "dependencies": [
         {
@@ -10,7 +10,7 @@
             "network": "testnet"
         },
         {
-            "name": "test_usdcx_stablecoin.aleo",
+            "name": "test_usad_stablecoin.aleo",
             "location": "network",
             "network": "testnet"
         }
