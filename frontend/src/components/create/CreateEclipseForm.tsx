@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTransaction } from '@/hooks/useTransaction';
 import { buildCreateMarketTx, buildCreateMarketStableTx, generateNonce } from '@/utils/transactions';
-import { registerMarketFromTx } from '@/utils/marketRegistration';
+import { registerMarketFromTx } from '@/utils/marketRegistrationFlow';
 import { getUsdcxProofs } from '@/utils/freezeListProof';
 import { parseAleoInput } from '@/utils/format';
 import { ECLIPSE_SESSION_OPTIONS, ALEO_TESTNET_API } from '@/constants';
