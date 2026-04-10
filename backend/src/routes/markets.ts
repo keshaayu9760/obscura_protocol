@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getCachedMarkets, fetchMarketsFromChain, setCachedMarkets, registerMarket, updateMarketMeta, persistRegistry } from '../services/indexer';
-import { savePendingMeta } from '../services/scanner';
+import { savePendingMeta, scanForNewMarkets } from '../services/scanner';
 
 const router = Router();
 
@@ -22,6 +22,23 @@ router.post('/refresh', async (_req, res) => {
   const markets = await fetchMarketsFromChain();
   setCachedMarkets(markets);
   res.json({ markets, refreshed: true });
+});
+
+router.post('/discover', async (req, res) => {
+  try {
+    const requestedBlocks = Number(req.body?.blocks);
+    const blocks = Number.isFinite(requestedBlocks)
+      ? Math.min(Math.max(Math.floor(requestedBlocks), 25), 1000)
+      : 300;
+
+    const found = await scanForNewMarkets(blocks);
+    const markets = await fetchMarketsFromChain();
+    setCachedMarkets(markets);
+    res.json({ success: true, found, marketCount: markets.length, markets });
+  } catch (err) {
+    console.error('[MarketsRoute] Discovery failed:', err);
+    res.status(500).json({ error: 'Market discovery failed' });
+  }
 });
 
 router.post('/register', async (req, res) => {
