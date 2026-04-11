@@ -4,9 +4,22 @@
 
 import { config } from '../config';
 import { registerMarket, persistRegistry } from './indexer';
+import { APP_STATE_KEYS, loadAppState, saveAppState } from './postgres-state';
 
 const CREATE_FUNCTION = 'open_market';
 const PROGRAM_SET = new Set(config.allProgramIds);
+const LEGACY_PROGRAM_PREFIXES = ['obscura_', 'veil_strike'];
+
+function shouldTrackProgram(program: string): boolean {
+  if (PROGRAM_SET.has(program)) return true;
+  return LEGACY_PROGRAM_PREFIXES.some((p) => program.startsWith(p));
+}
+
+function inferTokenTypeFromProgram(program: string): 'ALEO' | 'USDCX' | 'USAD' {
+  if (program === config.programIdCx || /(_cx|usdcx)/i.test(program)) return 'USDCX';
+  if (program === config.programIdSd || /(_sd|usad)/i.test(program)) return 'USAD';
+  return 'ALEO';
+}
 
 // Track the last scanned block to avoid re-scanning
 let lastScannedBlock = 0;
@@ -81,6 +94,7 @@ async function scanBlock(blockHeight: number): Promise<Array<{
   numOutcomes: number;
   category: number;
   tokenType: string;
+  programId: string;
   transactionId: string;
 }>> {
   const results: Array<{
@@ -89,6 +103,7 @@ async function scanBlock(blockHeight: number): Promise<Array<{
     numOutcomes: number;
     category: number;
     tokenType: string;
+    programId: string;
     transactionId: string;
   }> = [];
 
@@ -105,11 +120,11 @@ async function scanBlock(blockHeight: number): Promise<Array<{
       const transitions = tx.execution?.transitions || [];
 
       for (const transition of transitions) {
-        if (!PROGRAM_SET.has(transition.program)) continue;
+        const programId = typeof transition.program === 'string' ? transition.program : '';
+        if (!programId || !shouldTrackProgram(programId)) continue;
         if (transition.function !== CREATE_FUNCTION) continue;
 
-        const tokenType = transition.program === config.programIdCx ? 'USDCX'
-          : transition.program === config.programIdSd ? 'USAD' : 'ALEO';
+        const tokenType = inferTokenTypeFromProgram(programId);
 
         // Extract market_id from the future output's finalize arguments
         for (const output of (transition.outputs || [])) {
@@ -125,7 +140,15 @@ async function scanBlock(blockHeight: number): Promise<Array<{
             const numOutcomes = parseInt(args[4]?.replace(/u\d+$/, '') || '2', 10);
 
             if (marketId && marketId.endsWith('field')) {
-              results.push({ marketId, questionHash, numOutcomes, category, tokenType, transactionId: txId });
+              results.push({
+                marketId,
+                questionHash,
+                numOutcomes,
+                category,
+                tokenType,
+                programId,
+                transactionId: txId,
+              });
             }
           }
         }
@@ -189,6 +212,7 @@ export async function scanForNewMarkets(blocksToScan: number = 200): Promise<num
             outcomes: pendingMeta?.outcomes || outcomes,
             isEclipse: pendingMeta?.isEclipse || false,
             tokenType: found.tokenType as 'ALEO' | 'USDCX' | 'USAD',
+            programId: found.programId,
           });
 
           if (registered) {
@@ -207,7 +231,7 @@ export async function scanForNewMarkets(blocksToScan: number = 200): Promise<num
     lastScannedBlock = currentHeight;
 
     if (newMarkets > 0) {
-      persistRegistry();
+      await persistRegistry();
       console.log(`[Scanner] Found ${newMarkets} new market(s)`);
     }
 
@@ -231,20 +255,38 @@ interface PendingMeta {
 
 const pendingMetaByHash: Record<string, PendingMeta> = {};
 
-export function savePendingMeta(questionHash: string, meta: PendingMeta): void {
+export async function initializePendingMetaRegistry(): Promise<void> {
+  try {
+    const stored = await loadAppState<Record<string, PendingMeta>>(APP_STATE_KEYS.pendingMarketMeta);
+    for (const key of Object.keys(pendingMetaByHash)) delete pendingMetaByHash[key];
+    if (stored) {
+      for (const [hash, meta] of Object.entries(stored)) {
+        pendingMetaByHash[hash] = meta;
+      }
+    }
+    const count = Object.keys(pendingMetaByHash).length;
+    console.log(`[Scanner] Loaded ${count} pending market metadata entr${count === 1 ? 'y' : 'ies'} from PostgreSQL`);
+  } catch (err) {
+    console.error('[Scanner] Failed to initialize pending metadata registry:', err);
+  }
+}
+
+export async function savePendingMeta(questionHash: string, meta: PendingMeta): Promise<void> {
   pendingMetaByHash[questionHash] = meta;
   // Auto-cleanup entries older than 24 hours
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
   for (const [hash, m] of Object.entries(pendingMetaByHash)) {
     if (m.createdAt < cutoff) delete pendingMetaByHash[hash];
   }
+  await saveAppState(APP_STATE_KEYS.pendingMarketMeta, pendingMetaByHash);
 }
 
 function getPendingMeta(questionHash: string): PendingMeta | undefined {
   return pendingMetaByHash[questionHash];
 }
 
-export function deletePendingMeta(questionHash: string): void {
+export async function deletePendingMeta(questionHash: string): Promise<void> {
   delete pendingMetaByHash[questionHash];
+  await saveAppState(APP_STATE_KEYS.pendingMarketMeta, pendingMetaByHash);
 }
 

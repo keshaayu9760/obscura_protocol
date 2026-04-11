@@ -1,0 +1,9 @@
+[program]
+name = "obscura_protocol_v7"
+version = "0.1.0"
+description = "Obscura Protocol v7 - Private prediction market with governance and eclipse settlement"
+license = "MIT"
+
+[build]
+network = "testnet"
+endpoint = "https://api.explorer.provable.com/v1"

@@ -1,0 +1,9 @@
+[program]
+name = "private_sports_market"
+version = "0.1.0"
+description = "Private prediction market on Aleo testnet"
+license = "MIT"
+
+[build]
+network = "testnet"
+endpoint = "https://api.explorer.provable.com/v1"

@@ -2,13 +2,24 @@
 // Obscura Protocol — Application constants
 // ============================================================================
 
-export const PROGRAM_ID = 'obscura_v2_0.aleo';
+const MAIN_PROGRAM_DEFAULT = 'obscura_v2_0.aleo';
+const MAIN_PROGRAM_LEGACY = 'obscura_protocol_v7.aleo';
+const MAIN_PROGRAM_ENV = import.meta.env.VITE_PROGRAM_ID?.trim();
+const MAIN_PROGRAM_ALLOWED = new Set([MAIN_PROGRAM_DEFAULT, MAIN_PROGRAM_LEGACY]);
+
+// Guard against stale frontend env pointing to undeployed v7.
+// Also guard unknown legacy IDs (e.g. older test deployments not tracked by backend).
+export const PROGRAM_ID = !MAIN_PROGRAM_ENV ||
+  !MAIN_PROGRAM_ALLOWED.has(MAIN_PROGRAM_ENV) ||
+  MAIN_PROGRAM_ENV === MAIN_PROGRAM_LEGACY
+  ? MAIN_PROGRAM_DEFAULT
+  : MAIN_PROGRAM_ENV;
 export const PROGRAM_ID_CX = 'obscura_v2_0_cx.aleo';
 export const PROGRAM_ID_SD = 'obscura_v2_0_sd.aleo';
 
 export const ALEO_TESTNET_API = 'https://api.explorer.provable.com/v1/testnet';
 
-export const DEPLOYER = 'aleo19za49scmhufst9q8lhwka5hmkvzx5ersrue3gjwcs705542daursptmx0r';
+export const DEPLOYER = 'aleo1lyn2wql3ag7zqr4vc7slh4zq5qgkrkyljuh76sm94e52ky72hsyqqwvlfr';
 
 export type TokenType = 'ALEO' | 'USDCX' | 'USAD';
 

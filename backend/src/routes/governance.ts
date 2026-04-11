@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import { config } from '../config';
-import fs from 'fs';
-import path from 'path';
+import { APP_STATE_KEYS, loadAppState, saveAppState } from '../services/postgres-state';
 
 const router = Router();
 
-// ---- Proposal registry (persisted to disk) ----
+// ---- Proposal registry (persisted to PostgreSQL) ----
 interface ProposalMeta {
   id: string;          // The nonce field used when submitting
   txId?: string;       // Transaction ID from the wallet
@@ -20,24 +19,22 @@ interface ProposalMeta {
   createdAt: number;
 }
 
-const REGISTRY_PATH = path.join(process.cwd(), 'data', 'governance-registry.json');
 let proposalRegistry: ProposalMeta[] = [];
 
-function loadRegistry() {
+export async function initializeGovernanceRegistry(): Promise<void> {
   try {
-    if (fs.existsSync(REGISTRY_PATH)) {
-      proposalRegistry = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf-8'));
-    }
-  } catch { proposalRegistry = []; }
+    const stored = await loadAppState<ProposalMeta[]>(APP_STATE_KEYS.governanceProposals);
+    proposalRegistry = Array.isArray(stored) ? stored : [];
+    console.log(`[Governance] Loaded ${proposalRegistry.length} proposal(s) from PostgreSQL`);
+  } catch (err) {
+    proposalRegistry = [];
+    console.error('[Governance] Failed to load proposal registry:', err);
+  }
 }
 
-function persistRegistry() {
-  const dir = path.dirname(REGISTRY_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(REGISTRY_PATH, JSON.stringify(proposalRegistry, null, 2));
+async function persistRegistry(): Promise<void> {
+  await saveAppState(APP_STATE_KEYS.governanceProposals, proposalRegistry);
 }
-
-loadRegistry();
 
 // ---- Fetch proposal data from chain ----
 async function fetchProposalFromChain(proposalId: string) {
@@ -133,7 +130,7 @@ router.get('/', async (_req, res) => {
       };
     })
   );
-  if (registryChanged) persistRegistry();
+  if (registryChanged) await persistRegistry();
   res.json({ proposals: enriched });
 });
 
@@ -151,7 +148,7 @@ router.get('/:id', async (req, res) => {
     const resolved = await resolveProposalIdFromTx(meta.txId);
     if (resolved) {
       meta.resolvedId = resolved;
-      persistRegistry();
+      await persistRegistry();
       lookupId = resolved;
     }
   }
@@ -176,7 +173,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Register a new proposal (called by frontend after tx confirms)
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
   const { id, txId, title, description, actionType, targetMarket, amount, recipient, tokenType } = req.body;
   if (!id || !title) {
     res.status(400).json({ error: 'id and title required' });
@@ -187,7 +184,7 @@ router.post('/register', (req, res) => {
     // Update txId if provided and not already set
     if (txId && !existing.txId) {
       existing.txId = txId;
-      persistRegistry();
+      await persistRegistry();
     }
     res.json({ success: true, message: 'already registered' });
     return;
@@ -204,7 +201,7 @@ router.post('/register', (req, res) => {
     tokenType: tokenType || 0,
     createdAt: Date.now(),
   });
-  persistRegistry();
+  await persistRegistry();
   res.json({ success: true, count: proposalRegistry.length });
 });
 
@@ -255,7 +252,7 @@ router.post('/resolve', async (req, res) => {
     }
   }
 
-  if (updated > 0) persistRegistry();
+  if (updated > 0) await persistRegistry();
   res.json({ success: true, resolved: updated });
 });
 

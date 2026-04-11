@@ -3,7 +3,8 @@
 // Oracle provides start price at creation and end price at resolution for UP/DOWN determination.
 
 import { getCachedPrices } from './oracle';
-import { registerMarket, getCachedMarkets, persistRegistry } from './indexer';
+import { getCachedMarkets } from './indexer';
+import { savePendingMeta } from './scanner';
 import { dispatchSettle, dispatchCreateMarket } from './proof-dispatcher';
 import { getResolverAddress, fetchCurrentBlock } from './chain-executor';
 
@@ -278,15 +279,14 @@ async function createReplacementMarket(
 
   if (txId) {
     console.log(`[EclipseRoundMgr] Replacement market created tx=${txId}. Scanner will index it.`);
-    // Pre-register metadata so scanner recognizes it as eclipse
-    registerMarket(txId, {
-      questionHash,
+    // Store pending metadata keyed by question hash.
+    // Scanner will attach this metadata when it discovers the real market_id.
+    await savePendingMeta(questionHash, {
       question,
       outcomes: ['Up', 'Down'],
       isEclipse: true,
-      tokenType,
+      createdAt: Date.now(),
     });
-    persistRegistry();
   } else {
     console.error(`[EclipseRoundMgr] Failed to create replacement ${asset}-${tokenType} market`);
   }

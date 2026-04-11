@@ -228,6 +228,9 @@ program obscura_v2_0.aleo {
     mapping protocol_fees_claimed: field => bool;
     mapping oracle_configs: field => OracleConfig;
 
+    @noupgrade
+    constructor() {}
+
     // ========================================================================
     // 1. CREATE MARKET (ALEO)
     // ========================================================================

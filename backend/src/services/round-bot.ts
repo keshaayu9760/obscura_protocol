@@ -8,8 +8,7 @@ import { registerMarket, persistRegistry, clearStaleEclipseFlags, getCachedMarke
 import { savePendingMeta, deletePendingMeta } from './scanner';
 import { delegatedSettle, delegatedCreateMarket, isDelegatedProvingAvailable, getResolverAddressFromKey } from './delegated-prover';
 import { fetchCurrentBlock } from './chain-executor';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { APP_STATE_KEYS, loadAppState, saveAppState } from './postgres-state';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -61,7 +60,6 @@ const SLOT_DEFINITIONS: { id: string; asset: Asset; tokenType: TokenType }[] = [
   // { id: 'ETH-USAD',  asset: 'ETH',  tokenType: 'USAD'  },
 ];
 
-const STATE_FILE = join(__dirname, '../../data/round-bot-state.json');
 
 // ─── State ───────────────────────────────────────────────────────────────────
 
@@ -82,27 +80,30 @@ function getAssetPrice(asset: Asset): number {
 
 // ─── Persistence ─────────────────────────────────────────────────────────────
 
-function saveState(): void {
+async function persistBotState(): Promise<void> {
   if (!botState) return;
   try {
-    const dir = join(__dirname, '../../data');
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    writeFileSync(STATE_FILE, JSON.stringify(botState, null, 2));
+    await saveAppState(APP_STATE_KEYS.roundBotState, botState);
   } catch (err) {
     console.error('[RoundBot] Failed to save state:', err);
   }
 }
 
-function loadState(): BotState | null {
+function saveState(): void {
   try {
-    if (existsSync(STATE_FILE)) {
-      const raw = readFileSync(STATE_FILE, 'utf-8');
-      return JSON.parse(raw);
-    }
+    void persistBotState();
+  } catch (err) {
+    console.error('[RoundBot] Failed to queue state save:', err);
+  }
+}
+
+async function loadState(): Promise<BotState | null> {
+  try {
+    return await loadAppState<BotState>(APP_STATE_KEYS.roundBotState);
   } catch (err) {
     console.error('[RoundBot] Failed to load state:', err);
+    return null;
   }
-  return null;
 }
 
 // ─── Market Creation ─────────────────────────────────────────────────────────
@@ -187,7 +188,7 @@ async function createMarketForSlot(slot: MarketSlot): Promise<void> {
   console.log(`[RoundBot] Creating ${slot.id} round #${slot.roundNumber}: "${question}"`);
 
   // Save pending meta so scanner registers this with isEclipse: true + correct question
-  savePendingMeta(questionHash, {
+  await savePendingMeta(questionHash, {
     question,
     outcomes: ['Up', 'Down'],
     isEclipse: true,
@@ -223,11 +224,12 @@ async function createMarketForSlot(slot: MarketSlot): Promise<void> {
         outcomes: ['Up', 'Down'],
         isEclipse: true,
         tokenType: slot.tokenType === 'ALEO' ? undefined : slot.tokenType,
+        programId: getProgramId(slot.tokenType),
         botEndTime,
       });
       // Delete pending meta so scanner won't tag old markets with same questionHash as ECLIPSE
-      deletePendingMeta(questionHash);
-      persistRegistry();
+      await deletePendingMeta(questionHash);
+      await persistRegistry();
     }
 
     // Wait for confirmation
@@ -471,7 +473,7 @@ export async function startRoundBot(): Promise<void> {
   }
 
   // Try to restore state from disk
-  const saved = loadState();
+  const saved = await loadState();
   if (saved && saved.slots.length === SLOT_DEFINITIONS.length) {
     botState = saved;
     botState.resolverAddress = resolverAddress;
@@ -491,6 +493,7 @@ export async function startRoundBot(): Promise<void> {
           outcomes: ['Up', 'Down'],
           isEclipse: true,
           tokenType: slot.tokenType === 'ALEO' ? undefined : slot.tokenType,
+          programId: getProgramId(slot.tokenType),
           botEndTime: slot.endTime,
         });
       } else if (slot.state !== 'idle') {
@@ -534,7 +537,7 @@ export async function startRoundBot(): Promise<void> {
   running = true;
 
   // Clear ECLIPSE flags only for resolved/cancelled/stale markets (not active ones)
-  const cleared = clearStaleEclipseFlags();
+  const cleared = await clearStaleEclipseFlags();
   if (cleared > 0) console.log(`[RoundBot] Cleared ${cleared} stale ECLIPSE flags`);
 
   // Adopt existing active ECLIPSE markets from cache into idle slots
@@ -559,7 +562,7 @@ export async function startRoundBot(): Promise<void> {
     }
   }
 
-  saveState();
+  await persistBotState();
 
   console.log(`[RoundBot] Started — ${SLOT_DEFINITIONS.length} slots, ${config.roundDurationMinutes}min rounds, resolver=${resolverAddress.slice(0, 15)}...`);
 

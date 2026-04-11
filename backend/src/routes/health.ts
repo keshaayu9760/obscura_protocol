@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { config } from '../config';
 
 const router = Router();
 
@@ -6,12 +7,18 @@ router.get('/', (_req, res) => {
   res.json({
     status: 'ok',
     timestamp: Date.now(),
-    version: '6.0.0',
-    program: 'obscura_protocol_v7.aleo',
+    version: '7.0.0',
+    storage: config.databaseUrl ? 'postgresql' : 'unconfigured',
+    program: config.programId,
     programs: {
-      main: 'obscura_protocol_v7.aleo',
-      usdcx: 'obscura_protocol_v7_cx.aleo',
-      usad: 'obscura_protocol_v7_sd.aleo',
+      main: config.programId,
+      usdcx: config.programIdCx,
+      usad: config.programIdSd,
+    },
+    deployTxIds: {
+      main: config.deployTxId,
+      usdcx: config.deployTxIdCx,
+      usad: config.deployTxIdSd,
     },
   });
 });

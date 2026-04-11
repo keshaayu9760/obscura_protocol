@@ -3,6 +3,7 @@
     "version": "0.1.0",
     "description": "Obscura Protocol v7 — Private prediction market with governance and eclipse settlement",
     "license": "MIT",
+    "leo": "4.0.0",
     "dependencies": [
         {
             "name": "credits.aleo",

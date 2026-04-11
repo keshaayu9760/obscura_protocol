@@ -42,7 +42,7 @@ router.post('/discover', async (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
-  const { marketId, question, outcomes, isEclipse, tokenType, imageUrl } = req.body;
+  const { marketId, question, outcomes, isEclipse, tokenType, programId, imageUrl } = req.body;
   if (!marketId || !question || !Array.isArray(outcomes) || outcomes.length < 2) {
     res.status(400).json({ error: 'marketId, question, and outcomes (array) required' });
     return;
@@ -53,6 +53,7 @@ router.post('/register', async (req, res) => {
     outcomes,
     isEclipse: isEclipse || false,
     tokenType: tokenType || undefined,
+    programId: typeof programId === 'string' ? programId : undefined,
     imageUrl: imageUrl || undefined,
   });
   if (!registered) {
@@ -62,10 +63,11 @@ router.post('/register', async (req, res) => {
       outcomes,
       isEclipse: isEclipse || false,
       tokenType: tokenType || undefined,
+      programId: typeof programId === 'string' ? programId : undefined,
       imageUrl: imageUrl || undefined,
     });
   }
-  persistRegistry();
+  await persistRegistry();
   const markets = await fetchMarketsFromChain();
   setCachedMarkets(markets);
   res.json({ success: true, marketCount: markets.length });
@@ -74,13 +76,13 @@ router.post('/register', async (req, res) => {
 // Save pending market metadata before tx confirms.
 // Frontend sends question text + hash so the scanner can populate the
 // market's metadata when it discovers the market_id on-chain.
-router.post('/pending', (req, res) => {
+router.post('/pending', async (req, res) => {
   const { questionHash, question, outcomes, isEclipse } = req.body;
   if (!questionHash || !question) {
     res.status(400).json({ error: 'questionHash and question required' });
     return;
   }
-  savePendingMeta(questionHash, {
+  await savePendingMeta(questionHash, {
     question,
     outcomes: Array.isArray(outcomes) ? outcomes : ['Yes', 'No'],
     isEclipse: isEclipse || false,

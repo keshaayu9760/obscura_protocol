@@ -4,19 +4,20 @@ import cors from 'cors';
 import cron from 'node-cron';
 import { config } from './config';
 import { fetchOraclePrices, recordPriceSnapshot } from './services/oracle';
-import { fetchMarketsFromChain, setCachedMarkets } from './services/indexer';
+import { fetchMarketsFromChain, initializeMarketRegistry, setCachedMarkets } from './services/indexer';
 import { resolveExpiredMarkets } from './services/resolver';
-import { scanForNewMarkets } from './services/scanner';
+import { initializePendingMetaRegistry, scanForNewMarkets } from './services/scanner';
 import { autoResolveMarkets } from './services/auto-resolver';
 import { initSeedEclipseRounds } from './services/eclipse-manager';
 import { warmupWorker } from './services/proof-dispatcher';
 import { startRoundBot } from './services/round-bot';
+import { initPostgresState } from './services/postgres-state';
 import marketsRouter from './routes/markets';
 import oracleRouter from './routes/oracle';
 import statsRouter from './routes/stats';
 import healthRouter from './routes/health';
 import eclipseRouter from './routes/eclipse';
-import governanceRouter from './routes/governance';
+import governanceRouter, { initializeGovernanceRegistry } from './routes/governance';
 
 const app = express();
 
@@ -33,6 +34,13 @@ app.use('/api/governance', governanceRouter);
 
 // Initialize data
 async function initialize() {
+  await initPostgresState();
+  await Promise.all([
+    initializeMarketRegistry(),
+    initializePendingMetaRegistry(),
+    initializeGovernanceRegistry(),
+  ]);
+
   console.log('[Init] Fetching initial data...');
   const [markets] = await Promise.all([
     fetchMarketsFromChain(),

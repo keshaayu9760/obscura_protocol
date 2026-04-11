@@ -4,8 +4,7 @@ import { buildCreateMarketTx, buildCreateMarketStableTx, generateNonce } from '@
 import { registerMarketFromTx } from '@/utils/marketRegistrationFlow';
 import { getUsdcxProofs } from '@/utils/freezeListProof';
 import { parseAleoInput } from '@/utils/format';
-import { CATEGORIES, ALEO_TESTNET_API } from '@/constants';
-import { useWalletStore } from '@/stores/walletStore';
+import { CATEGORIES, ALEO_TESTNET_API, DEPLOYER } from '@/constants';
 import { useMarketStore } from '@/stores/marketStore';
 import Button from '@/components/shared/Button';
 import Card from '@/components/shared/Card';
@@ -24,7 +23,6 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
   const [tokenType, setTokenType] = useState<'ALEO' | 'USDCX' | 'USAD'>('ALEO');
   const [imageUrl, setImageUrl] = useState('');
   const { status, execute, fetchUsdcxRecord } = useTransaction();
-  const walletAddress = useWalletStore((s) => s.address);
   const fetchMarkets = useMarketStore((s) => s.fetchMarkets);
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
 
@@ -86,7 +84,8 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
     const catNum = categoryMap[category] || 7;
     const blockDeadline = `${block + durationBlocks}u32`;
     const resolutionBlock = `${block + durationBlocks + 120960}u32`;
-    const resolver = walletAddress || '';
+    // Auto-resolver in backend can only resolve markets where resolver == DEPLOYER.
+    const resolver = DEPLOYER;
     const isStable = tokenType === 'USDCX' || tokenType === 'USAD';
     let tx;
     if (isStable) {

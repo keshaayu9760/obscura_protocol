@@ -1,0 +1,15 @@
+{
+  "program": "private_sports_market.aleo",
+  "version": "0.1.0",
+  "description": "Private prediction market on Aleo testnet",
+  "license": "MIT",
+  "leo": "4.0.0",
+  "dependencies": [
+    {
+      "name": "credits.aleo",
+      "location": "network",
+      "network": "testnet"
+    }
+  ],
+  "dev_dependencies": null
+}

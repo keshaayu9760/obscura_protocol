@@ -7,10 +7,8 @@ import { Network } from '@provablehq/aleo-types';
 import '@provablehq/aleo-wallet-adaptor-react-ui/dist/styles.css';
 import { useWalletStore } from '@/stores/walletStore';
 import { useEffect } from 'react';
+import { PROGRAM_ID, PROGRAM_ID_CX, PROGRAM_ID_SD } from '@/constants';
 
-const PROGRAM_ID = import.meta.env.VITE_PROGRAM_ID || 'obscura_protocol_v7.aleo';
-const PROGRAM_ID_CX = 'obscura_protocol_v7_cx.aleo';
-const PROGRAM_ID_SD = 'obscura_protocol_v7_sd.aleo';
 const NETWORK = import.meta.env.VITE_NETWORK === 'mainnet' ? Network.MAINNET : Network.TESTNET;
 
 interface WalletProviderProps {

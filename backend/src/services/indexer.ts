@@ -1,7 +1,6 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
 import { config } from '../config';
 import type { MarketInfo } from '../types';
+import { APP_STATE_KEYS, loadAppState, saveAppState } from './postgres-state';
 
 let marketsCache: MarketInfo[] = [];
 
@@ -12,38 +11,12 @@ export interface MarketMeta {
   outcomes: string[];
   isEclipse: boolean;
   tokenType?: 'ALEO' | 'USDCX' | 'USAD';
+  programId?: string;
   imageUrl?: string;
   botEndTime?: number; // Wall-clock ms timestamp for round-bot markets
 }
 
 // ── JSON persistence for dynamically discovered/registered markets ──
-const DYNAMIC_REGISTRY_PATH = join(__dirname, '../../data/dynamic-markets.json');
-
-function loadDynamicRegistry(): Record<string, MarketMeta> {
-  try {
-    if (existsSync(DYNAMIC_REGISTRY_PATH)) {
-      const raw = readFileSync(DYNAMIC_REGISTRY_PATH, 'utf-8');
-      return JSON.parse(raw);
-    }
-  } catch (err) {
-    console.error('[Indexer] Failed to load dynamic registry:', err);
-  }
-  return {};
-}
-
-function saveDynamicRegistry(registry: Record<string, MarketMeta>): void {
-  try {
-    const dir = join(__dirname, '../../data');
-    if (!existsSync(dir)) {
-      const { mkdirSync } = require('fs');
-      mkdirSync(dir, { recursive: true });
-    }
-    writeFileSync(DYNAMIC_REGISTRY_PATH, JSON.stringify(registry, null, 2));
-  } catch (err) {
-    console.error('[Indexer] Failed to save dynamic registry:', err);
-  }
-}
-
 // Registry of known market IDs with their off-chain metadata
 // v7: Seed registry is empty — all markets are discovered dynamically via scanner
 // or registered via POST /api/markets/register. Legacy v5 seeds removed.
@@ -51,10 +24,7 @@ const SEED_REGISTRY: Record<string, MarketMeta> = {};
 
 // Merge seed + dynamic (file-persisted) registries
 // Seed entries take priority — they have curated question text & correct metadata
-const MARKET_REGISTRY: Record<string, MarketMeta> = {
-  ...loadDynamicRegistry(),
-  ...SEED_REGISTRY,
-};
+const MARKET_REGISTRY: Record<string, MarketMeta> = { ...SEED_REGISTRY };
 
 const STATUS_MAP: Record<number, MarketInfo['status']> = {
   1: 'active',
@@ -210,9 +180,13 @@ export async function fetchMarketsFromChain(): Promise<MarketInfo[]> {
 
   for (const [marketId, meta] of Object.entries(MARKET_REGISTRY)) {
     try {
-      // Determine which program to query based on token type
-      const pid = meta.tokenType === 'USDCX' ? config.programIdCx
-        : meta.tokenType === 'USAD' ? config.programIdSd : config.programId;
+      // Use explicit programId when known, fallback to token-type routing.
+      // This keeps legacy or alternate deployments indexable.
+      const pid = (meta.programId && meta.programId.trim())
+        ? meta.programId.trim()
+        : meta.tokenType === 'USDCX' ? config.programIdCx
+          : meta.tokenType === 'USAD' ? config.programIdSd
+            : config.programId;
 
       const [marketRaw, poolRaw] = await Promise.all([
         fetchMapping('markets', marketId, pid),
@@ -283,6 +257,30 @@ export function setCachedMarkets(markets: MarketInfo[]): void {
   marketsCache = markets;
 }
 
+export async function initializeMarketRegistry(): Promise<void> {
+  try {
+    const stored = await loadAppState<Record<string, MarketMeta>>(APP_STATE_KEYS.dynamicMarkets);
+
+    for (const key of Object.keys(MARKET_REGISTRY)) {
+      if (!SEED_REGISTRY[key]) delete MARKET_REGISTRY[key];
+    }
+
+    if (stored) {
+      for (const [marketId, meta] of Object.entries(stored)) {
+        MARKET_REGISTRY[marketId] = meta;
+      }
+    }
+
+    for (const [marketId, meta] of Object.entries(SEED_REGISTRY)) {
+      MARKET_REGISTRY[marketId] = meta;
+    }
+
+    console.log(`[Indexer] Loaded ${Object.keys(MARKET_REGISTRY).length} market registry entries from PostgreSQL`);
+  } catch (err) {
+    console.error('[Indexer] Failed to initialize market registry:', err);
+  }
+}
+
 export function registerMarket(marketId: string, meta: MarketMeta): boolean {
   const existing = MARKET_REGISTRY[marketId];
   if (existing) {
@@ -303,15 +301,15 @@ export function registerMarket(marketId: string, meta: MarketMeta): boolean {
  * Persist all dynamically registered markets (those not in the seed registry) to disk.
  * Called after scanner discovers new markets or after manual registration.
  */
-export function persistRegistry(): void {
+export async function persistRegistry(): Promise<void> {
   const dynamic: Record<string, MarketMeta> = {};
   for (const [id, meta] of Object.entries(MARKET_REGISTRY)) {
     if (!SEED_REGISTRY[id]) {
       dynamic[id] = meta;
     }
   }
-  saveDynamicRegistry(dynamic);
-  console.log(`[Indexer] Persisted ${Object.keys(dynamic).length} dynamic market(s) to disk`);
+  await saveAppState(APP_STATE_KEYS.dynamicMarkets, dynamic);
+  console.log(`[Indexer] Persisted ${Object.keys(dynamic).length} dynamic market(s) to PostgreSQL`);
 }
 
 /**
@@ -328,7 +326,7 @@ export function updateMarketMeta(marketId: string, partial: Partial<MarketMeta>)
  * or whose botEndTime is more than 60 minutes in the past (orphaned rounds).
  * This prevents wiping flags on markets that are still active and tradable.
  */
-export function clearStaleEclipseFlags(): number {
+export async function clearStaleEclipseFlags(): Promise<number> {
   const now = Date.now();
   const STALE_THRESHOLD = 60 * 60 * 1000; // 60 min
   let count = 0;
@@ -347,7 +345,9 @@ export function clearStaleEclipseFlags(): number {
       count++;
     }
   }
-  if (count > 0) persistRegistry();
+  if (count > 0) {
+    await persistRegistry();
+  }
   return count;
 }
 

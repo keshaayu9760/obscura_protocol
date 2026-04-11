@@ -115,12 +115,19 @@ export async function registerMarketFromTx(params: MarketRegistrationParams): Pr
       if (!res.ok) continue;
 
       const txData = await res.json();
-      const transition = txData?.execution?.transitions?.find(
-        (t: { program: string; function: string }) =>
-          ALL_PROGRAM_IDS.includes(t.program as typeof ALL_PROGRAM_IDS[number]) &&
-          t.function === 'open_market'
-      );
+      const transitions = (txData?.execution?.transitions || []) as Array<{
+        program?: string;
+        function?: string;
+        outputs?: Array<{ type?: string; value?: string }>;
+      }>;
+      // Prefer known Obscura programs, but fall back to any open_market transition.
+      const transition = transitions.find((t) =>
+        typeof t.program === 'string' &&
+        ALL_PROGRAM_IDS.includes(t.program as typeof ALL_PROGRAM_IDS[number]) &&
+        t.function === 'open_market'
+      ) || transitions.find((t) => t.function === 'open_market');
       if (!transition) continue;
+      const programId = typeof transition.program === 'string' ? transition.program : undefined;
 
       // Extract market_id from future output finalize arguments (arg[0])
       let marketId: string | null = null;
@@ -155,6 +162,7 @@ export async function registerMarketFromTx(params: MarketRegistrationParams): Pr
           outcomes: outcomeLabels,
           isEclipse,
           tokenType: tokenType || undefined,
+          programId,
           imageUrl: imageUrl || undefined,
         }),
       });

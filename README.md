@@ -300,6 +300,7 @@ Both the round bot and the proof dispatcher use the **Provable API** for delegat
 cd backend
 cp .env.example .env   # set RESOLVER_PRIVATE_KEY
 npm install
+npm run db:bootstrap   # create role/db if your admin connection can provision Postgres
 npm run dev            # port 3001
 
 # Frontend
@@ -315,6 +316,8 @@ bash scripts/build.sh
 ```
 PORT=3001
 ALEO_ENDPOINT=https://api.explorer.provable.com/v1
+DATABASE_URL=postgresql://obscura_app:change_me@127.0.0.1:5433/obscura_protocol
+DATABASE_ADMIN_URL=postgresql://postgres:change_me@127.0.0.1:5433/postgres
 CORS_ORIGIN=http://localhost:5173
 RESOLVER_PRIVATE_KEY=APrivateKey1...
 ```

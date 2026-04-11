@@ -1,18 +1,22 @@
 {
-    "program": "obscura_protocol_v7_cx.aleo",
-    "version": "0.1.0",
-    "description": "Obscura Protocol v7 CX — USDCx stablecoin eclipse-market module",
-    "license": "MIT",
-    "dependencies": [
-        {
-            "name": "credits.aleo",
-            "location": "network",
-            "network": "testnet"
-        },
-        {
-            "name": "test_usdcx_stablecoin.aleo",
-            "location": "network",
-            "network": "testnet"
-        }
-    ]
+  "program": "obscura_protocol_v7_cx.aleo",
+  "version": "0.1.0",
+  "description": "Obscura Protocol v7 CX — USDCx stablecoin eclipse-market module",
+  "license": "MIT",
+  "leo": "4.0.0",
+  "dependencies": [
+    {
+      "name": "credits.aleo",
+      "location": "network",
+      "path": null,
+      "edition": null
+    },
+    {
+      "name": "test_usdcx_stablecoin.aleo",
+      "location": "network",
+      "path": null,
+      "edition": null
+    }
+  ],
+  "dev_dependencies": null
 }

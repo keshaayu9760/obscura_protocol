@@ -184,6 +184,9 @@ program obscura_v2_0_cx.aleo {
     mapping oracle_configs: field => OracleConfig;
     mapping approved_resolvers: address => bool;
 
+    @noupgrade
+    constructor() {}
+
 
     // ========================================================================
     // 1. CREATE MARKET (USDCX)

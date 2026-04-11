@@ -14,6 +14,14 @@ Key changes:
 
 import re
 import sys
+import textwrap
+
+
+def format_final_body(body, aliases):
+    body_lines = textwrap.dedent(body).strip('\n').split('\n')
+    lines = [line for line in aliases if line.strip()]
+    lines.extend(line.rstrip() for line in body_lines if line.strip())
+    return '\n'.join(f'            {line}' for line in lines)
 
 def transform_leo4(input_file, output_file):
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -29,9 +37,7 @@ def transform_leo4(input_file, output_file):
     content = re.sub(r'\s*@noupgrade\s*\n\s*async constructor\(\)\s*\{\s*\}\s*\n', '\n', content)
     
     # 4. Replace Future with Final in types
-    content = content.replace(': Future', ': Final')
-    content = content.replace('-> Future', '-> Final')
-    content = content.replace('Future =', 'Final =')
+    content = re.sub(r'\bFuture\b', 'Final', content)
     
     # 5. Replace .await() with .run()
     content = content.replace('.await()', '.run()')
@@ -71,8 +77,11 @@ def transform_leo4(input_file, output_file):
             for param in params_str.split(','):
                 param = param.strip()
                 if ':' in param:
-                    pname = param.split(':')[0].strip()
-                    params.append(pname)
+                    pname, ptype = param.split(':', 1)
+                    params.append({
+                        'name': pname.strip(),
+                        'type': ptype.strip(),
+                    })
         
         # Find matching closing brace
         brace_count = 1
@@ -128,30 +137,17 @@ def transform_leo4(input_file, output_file):
             param_to_arg = {}
             for i, param in enumerate(data['params']):
                 if i < len(args):
-                    param_to_arg[param] = args[i]
-            
-            # Substitute in body
-            substituted_body = data['body']
-            
-            # Common substitutions for our contracts
-            # creator -> self.signer
-            # caller -> self.signer  
-            # token_type -> TOKEN_ALEO (for main contract)
-            special_subs = {
-                'creator': 'self.signer',
-                'caller': 'self.signer',
-            }
-            
-            for param, arg in param_to_arg.items():
-                if param in special_subs and arg == 'self.signer':
-                    substituted_body = re.sub(rf'\b{param}\b', special_subs[param], substituted_body)
-                elif param == 'token_type' and arg == 'TOKEN_ALEO':
-                    substituted_body = re.sub(rf'\b{param}\b', 'TOKEN_ALEO', substituted_body)
-                # For transfer_final, keep as is since it's defined in scope
-            
-            # Clean up body formatting
-            lines = substituted_body.strip().split('\n')
-            formatted_body = '\n'.join('            ' + line.strip() for line in lines if line.strip())
+                    param_to_arg[param['name']] = {
+                        'arg': args[i],
+                        'type': param['type'],
+                    }
+
+            aliases = []
+            for name, meta in param_to_arg.items():
+                if meta['arg'] != name:
+                    aliases.append(f'let {name}: {meta["type"]} = {meta["arg"]};')
+
+            formatted_body = format_final_body(data['body'], aliases)
             
             # Create new return statement
             new_return = f'''return ({other_returns}, final {{
@@ -172,17 +168,17 @@ def transform_leo4(input_file, output_file):
             param_to_arg = {}
             for i, param in enumerate(data['params']):
                 if i < len(args):
-                    param_to_arg[param] = args[i]
-            
-            substituted_body = data['body']
-            for param, arg in param_to_arg.items():
-                if param in ['creator', 'caller'] and 'self.signer' in arg:
-                    substituted_body = re.sub(rf'\b{param}\b', 'self.signer', substituted_body)
-                elif param == 'token_type':
-                    substituted_body = re.sub(rf'\b{param}\b', arg, substituted_body)
-            
-            lines = substituted_body.strip().split('\n')
-            formatted_body = '\n'.join('            ' + line.strip() for line in lines if line.strip())
+                    param_to_arg[param['name']] = {
+                        'arg': args[i],
+                        'type': param['type'],
+                    }
+
+            aliases = []
+            for name, meta in param_to_arg.items():
+                if meta['arg'] != name:
+                    aliases.append(f'let {name}: {meta["type"]} = {meta["arg"]};')
+
+            formatted_body = format_final_body(data['body'], aliases)
             
             new_return = f'''return final {{
 {formatted_body}
