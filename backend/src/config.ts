@@ -6,27 +6,22 @@ const parseCorsOrigin = (origin?: string): string | string[] => {
 
 const normalizeProgramId = (
   value: string | undefined,
-  fallback: string,
-  legacy: string
+  fallback: string
 ): string => {
   const normalized = (value || '').trim();
-  if (!normalized || normalized === legacy) return fallback;
-  return normalized;
+  return normalized || fallback;
 };
 
 const programId = normalizeProgramId(
   process.env.ALEO_PROGRAM_ID,
-  'obscura_v2_0.aleo',
   'obscura_protocol_v7.aleo'
 );
 const programIdCx = normalizeProgramId(
   process.env.ALEO_PROGRAM_ID_CX,
-  'obscura_v2_0_cx.aleo',
   'obscura_protocol_v7_cx.aleo'
 );
 const programIdSd = normalizeProgramId(
   process.env.ALEO_PROGRAM_ID_SD,
-  'obscura_v2_0_sd.aleo',
   'obscura_protocol_v7_sd.aleo'
 );
 

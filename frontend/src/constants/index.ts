@@ -2,20 +2,13 @@
 // Obscura Protocol — Application constants
 // ============================================================================
 
-const MAIN_PROGRAM_DEFAULT = 'obscura_v2_0.aleo';
-const MAIN_PROGRAM_LEGACY = 'obscura_protocol_v7.aleo';
-const MAIN_PROGRAM_ENV = import.meta.env.VITE_PROGRAM_ID?.trim();
-const MAIN_PROGRAM_ALLOWED = new Set([MAIN_PROGRAM_DEFAULT, MAIN_PROGRAM_LEGACY]);
+const MAIN_PROGRAM_DEFAULT = 'obscura_protocol_v7.aleo';
+const MAIN_PROGRAM_CX_DEFAULT = 'obscura_protocol_v7_cx.aleo';
+const MAIN_PROGRAM_SD_DEFAULT = 'obscura_protocol_v7_sd.aleo';
 
-// Guard against stale frontend env pointing to undeployed v7.
-// Also guard unknown legacy IDs (e.g. older test deployments not tracked by backend).
-export const PROGRAM_ID = !MAIN_PROGRAM_ENV ||
-  !MAIN_PROGRAM_ALLOWED.has(MAIN_PROGRAM_ENV) ||
-  MAIN_PROGRAM_ENV === MAIN_PROGRAM_LEGACY
-  ? MAIN_PROGRAM_DEFAULT
-  : MAIN_PROGRAM_ENV;
-export const PROGRAM_ID_CX = 'obscura_v2_0_cx.aleo';
-export const PROGRAM_ID_SD = 'obscura_v2_0_sd.aleo';
+export const PROGRAM_ID = import.meta.env.VITE_PROGRAM_ID?.trim() || MAIN_PROGRAM_DEFAULT;
+export const PROGRAM_ID_CX = import.meta.env.VITE_PROGRAM_ID_CX?.trim() || MAIN_PROGRAM_CX_DEFAULT;
+export const PROGRAM_ID_SD = import.meta.env.VITE_PROGRAM_ID_SD?.trim() || MAIN_PROGRAM_SD_DEFAULT;
 
 export const ALEO_TESTNET_API = 'https://api.explorer.provable.com/v1/testnet';
 
