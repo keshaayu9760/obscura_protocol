@@ -22,7 +22,7 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
   const [durationDays, setDurationDays] = useState('7');
   const [tokenType, setTokenType] = useState<'ALEO' | 'USDCX' | 'USAD'>('ALEO');
   const [imageUrl, setImageUrl] = useState('');
-  const { status, execute, fetchUsdcxRecord } = useTransaction();
+  const { status, execute, fetchCreditsRecord, fetchUsdcxRecord } = useTransaction();
   const fetchMarkets = useMarketStore((s) => s.fetchMarkets);
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
 
@@ -106,6 +106,8 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
         proofs
       );
     } else {
+      const creditsRecord = await fetchCreditsRecord(liquidityMicro);
+      if (!creditsRecord) return;
       tx = buildCreateMarketTx(
         questionHash,
         catNum,
@@ -114,7 +116,8 @@ export default function CreateEventForm({ onSuccess }: CreateEventFormProps) {
         resolutionBlock,
         resolver,
         `${liquidityMicro}u128`,
-        nonce
+        nonce,
+        creditsRecord
       );
     }
     const txId = await execute(tx);

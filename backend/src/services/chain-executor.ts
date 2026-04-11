@@ -85,6 +85,26 @@ async function getProgramManager() {
   return pm;
 }
 
+async function getPrivateCreditsRecordInput(amountMicrocredits: number): Promise<string> {
+  const pm = await getProgramManager();
+  const recordProvider = pm.recordProvider;
+  if (!recordProvider?.findCreditsRecord) {
+    throw new Error('[ChainExecutor] Record provider unavailable for private credits lookup');
+  }
+
+  await pm.setInclusionProver();
+  const record = await recordProvider.findCreditsRecord(amountMicrocredits, {
+    unspent: true,
+    nonces: [],
+  });
+  const plaintext = record?.record_plaintext;
+  if (!plaintext) {
+    throw new Error('[ChainExecutor] No spendable private ALEO record found for market creation');
+  }
+
+  return plaintext;
+}
+
 export function getResolverAddress(): string {
   if (!PRIVATE_KEY) return '';
   // Derive address from private key synchronously (cache it)
@@ -244,20 +264,25 @@ export async function executeInitMarket(
   try {
     const pm = await getProgramManager();
     console.log(`[ChainExecutor] Creating ECLIPSE market hash=${questionHash.slice(0, 20)}...`);
+    const inputs = [
+      questionHash,
+      `${category}u8`,
+      `${numOutcomes}u8`,
+      `${deadline}u32`,
+      `${resolutionDeadline}u32`,
+      resolver,
+      `${initialLiquidity}u128`,
+      nonce,
+    ];
+
+    if (!tokenType || tokenType === 'ALEO') {
+      inputs.push(await getPrivateCreditsRecordInput(initialLiquidity));
+    }
 
     const txId = await pm.execute({
       programName: getProgramId(tokenType),
       functionName: 'open_market',
-      inputs: [
-        questionHash,
-        `${category}u8`,
-        `${numOutcomes}u8`,
-        `${deadline}u32`,
-        `${resolutionDeadline}u32`,
-        resolver,
-        `${initialLiquidity}u128`,
-        nonce,
-      ],
+      inputs,
       priorityFee: PRIORITY_FEE,
       privateFee: false,
     });

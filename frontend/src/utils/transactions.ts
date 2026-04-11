@@ -43,7 +43,8 @@ export function buildCreateMarketTx(
   resolutionDeadline: string,
   resolver: string,
   initialLiquidity: string,
-  nonce: string
+  nonce: string,
+  creditsRecord: string
 ): AleoTransaction {
   return buildTransaction(TRANSITIONS.CREATE_MARKET, [
     questionHash,
@@ -54,6 +55,7 @@ export function buildCreateMarketTx(
     resolver,
     initialLiquidity,
     nonce,
+    creditsRecord,
   ], 2_000_000);
 }
 

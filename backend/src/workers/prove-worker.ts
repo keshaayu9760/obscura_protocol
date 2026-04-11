@@ -50,6 +50,25 @@ async function getOrCreatePM(privateKey: string, aleoEndpoint: string, programId
   return pm;
 }
 
+async function getPrivateCreditsRecordInput(pm: any, amountMicrocredits: number): Promise<string> {
+  const recordProvider = pm.recordProvider;
+  if (!recordProvider?.findCreditsRecord) {
+    throw new Error('[ProveWorker] Record provider unavailable for private credits lookup');
+  }
+
+  await pm.setInclusionProver();
+  const record = await recordProvider.findCreditsRecord(amountMicrocredits, {
+    unspent: true,
+    nonces: [],
+  });
+  const plaintext = record?.record_plaintext;
+  if (!plaintext) {
+    throw new Error('[ProveWorker] No spendable private ALEO record found for market creation');
+  }
+
+  return plaintext;
+}
+
 async function executeTask(input: TaskInput): Promise<TaskResult> {
   try {
     const pm = await getOrCreatePM(input.privateKey, input.aleoEndpoint, input.programId);
@@ -72,19 +91,25 @@ async function executeTask(input: TaskInput): Promise<TaskResult> {
     } else if (input.action === 'open_market') {
       const p = input.params;
       console.log(`[ProveWorker] Executing open_market for ${input.programId}...`);
+      const inputs = [
+        p.questionHash,
+        `${p.category}u8`,
+        `${p.numOutcomes}u8`,
+        `${p.deadline}u32`,
+        `${p.resolutionDeadline}u32`,
+        p.resolver,
+        `${p.initialLiquidity}u128`,
+        p.nonce,
+      ];
+
+      if (!p.tokenType || p.tokenType === 'ALEO') {
+        inputs.push(await getPrivateCreditsRecordInput(pm, p.initialLiquidity));
+      }
+
       txId = await pm.execute({
         programName: input.programId,
         functionName: 'open_market',
-        inputs: [
-          p.questionHash,
-          `${p.category}u8`,
-          `${p.numOutcomes}u8`,
-          `${p.deadline}u32`,
-          `${p.resolutionDeadline}u32`,
-          p.resolver,
-          `${p.initialLiquidity}u128`,
-          p.nonce,
-        ],
+        inputs,
         priorityFee: PRIORITY_FEE,
         privateFee: false,
       });

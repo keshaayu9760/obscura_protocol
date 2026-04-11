@@ -52,6 +52,26 @@ async function getProgramManager(programId: string) {
   return pm;
 }
 
+async function getPrivateCreditsRecordInput(programId: string, amountMicrocredits: number): Promise<string> {
+  const pm = await getProgramManager(programId);
+  const recordProvider = pm.recordProvider;
+  if (!recordProvider?.findCreditsRecord) {
+    throw new Error('Record provider unavailable for private credits lookup');
+  }
+
+  await pm.setInclusionProver();
+  const record = await recordProvider.findCreditsRecord(amountMicrocredits, {
+    unspent: true,
+    nonces: [],
+  });
+  const plaintext = record?.record_plaintext;
+  if (!plaintext) {
+    throw new Error('No spendable private ALEO record found for market creation');
+  }
+
+  return plaintext;
+}
+
 function getProgramId(tokenType?: string): string {
   if (tokenType === 'USDCX') return config.programIdCx;
   if (tokenType === 'USAD') return config.programIdSd;
@@ -179,7 +199,7 @@ export async function delegatedCreateMarket(
 ): Promise<DelegatedResult> {
   const programId = getProgramId(tokenType);
   console.log(`[DelegatedProver] open_market hash=${questionHash.slice(0, 20)}... program=${programId}`);
-  return delegatedExecute(programId, 'open_market', [
+  const inputs = [
     questionHash,
     `${category}u8`,
     `${numOutcomes}u8`,
@@ -188,6 +208,14 @@ export async function delegatedCreateMarket(
     resolver,
     `${initialLiquidity}u128`,
     nonce,
+  ];
+
+  if (!tokenType || tokenType === 'ALEO') {
+    inputs.push(await getPrivateCreditsRecordInput(programId, initialLiquidity));
+  }
+
+  return delegatedExecute(programId, 'open_market', [
+    ...inputs,
   ]);
 }
 

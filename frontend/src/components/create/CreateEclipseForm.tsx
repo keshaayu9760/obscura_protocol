@@ -21,7 +21,7 @@ export default function CreateEclipseForm({ onSuccess }: CreateEclipseFormProps)
   const [selectedWindow, setSelectedWindow] = useState<typeof ECLIPSE_SESSION_OPTIONS[number]>(ECLIPSE_SESSION_OPTIONS[0]);
   const [seedLiquidityInput, setSeedLiquidityInput] = useState('5');
   const [settlementToken, setSettlementToken] = useState<'ALEO' | 'USDCX' | 'USAD'>('ALEO');
-  const { status, execute, fetchUsdcxRecord } = useTransaction();
+  const { status, execute, fetchCreditsRecord, fetchUsdcxRecord } = useTransaction();
   const walletAddress = useWalletStore((s) => s.address);
   const fetchMarkets = useMarketStore((s) => s.fetchMarkets);
   const [currentBlock, setCurrentBlock] = useState<number | null>(null);
@@ -79,9 +79,11 @@ export default function CreateEclipseForm({ onSuccess }: CreateEclipseFormProps)
         `${liquidityMicro}u128`, nonce, tokenRecord, proofs
       );
     } else {
+      const creditsRecord = await fetchCreditsRecord(liquidityMicro);
+      if (!creditsRecord) return;
       tx = buildCreateMarketTx(
         questionHash, 1, 2, deadline, resolutionDeadline, resolver,
-        `${liquidityMicro}u128`, nonce
+        `${liquidityMicro}u128`, nonce, creditsRecord
       );
     }
     const txId = await execute(tx);

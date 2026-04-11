@@ -158,7 +158,7 @@ export async function dispatchCreateMarket(
   // Fallback to local worker (slow, 2-5 min)
   const result = await dispatch('open_market', {
     questionHash, category, numOutcomes, deadline, resolutionDeadline,
-    resolver, initialLiquidity, nonce,
+    resolver, initialLiquidity, nonce, tokenType,
   }, getProgramId(tokenType));
   return result.success ? (result.txId ?? null) : null;
 }

@@ -243,8 +243,9 @@ program obscura_v2_0.aleo {
         public resolution_deadline: u32,
         public resolver: address,
         private initial_liquidity: u128,
-        private nonce: field
-    ) -> (field, LPToken, Final) {
+        private nonce: field,
+        private credits_in: credits.aleo::credits,
+    ) -> (field, LPToken, credits.aleo::credits, Final) {
         assert(num_outcomes >= 2u8 && num_outcomes <= 4u8);
         assert(initial_liquidity >= MIN_LIQUIDITY);
 
@@ -263,9 +264,10 @@ program obscura_v2_0.aleo {
 
         let creator: address = self.signer;
         let amount_u64: u64 = initial_liquidity as u64;
-        let transfer_final: Final = credits.aleo::transfer_public_as_signer(self.address, amount_u64);
+        let (change, transfer_final): (credits.aleo::credits, Final) =
+            credits.aleo::transfer_private_to_public(credits_in, self.address, amount_u64);
 
-        return (market_id, lp_token, final {
+        return (market_id, lp_token, change, final {
             transfer_final.run();
             let protocol_locked: bool = protocol_paused.get_or_use(PAUSE_KEY, false);
             assert(!protocol_locked);
